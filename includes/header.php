@@ -24,79 +24,158 @@ if ($currentUser && $currentUser['role'] === 'customer') {
         $hasCourierApp = false;
     }
 }
+
+$theme = getAppTheme();
 ?>
-<!DOCTYPE html>
-<html lang="en">
+<!doctype html>
+<html lang="en" data-bs-theme="<?= $theme ?>">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta charset="utf-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"/>
     <title><?= APP_NAME ?></title>
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+    <link rel="preconnect" href="https://cdn.jsdelivr.net">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/core@1.0.0-beta20/dist/css/tabler.min.css">
     <style>
-        body { padding-top: 56px; }
-        .navbar-brand { font-weight: 700; font-size: 1.4rem; }
+        .navbar-brand-text { font-weight: 800; font-size: 1.2rem; letter-spacing: -0.02em; }
     </style>
 </head>
-<body>
-<nav class="navbar navbar-expand-lg navbar-dark bg-dark fixed-top">
-    <div class="container">
-        <a class="navbar-brand" href="<?= APP_URL ?>/index.php">DormDash 🍔</a>
-        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarMain"
-                aria-controls="navbarMain" aria-expanded="false" aria-label="Toggle navigation">
-            <span class="navbar-toggler-icon"></span>
-        </button>
-        <div class="collapse navbar-collapse" id="navbarMain">
-            <ul class="navbar-nav ms-auto mb-2 mb-lg-0">
-                <?php if (!$currentUser): ?>
-                    <li class="nav-item">
-                        <a class="nav-link" href="<?= APP_URL ?>/auth/login.php">Login</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="<?= APP_URL ?>/auth/register.php">Register</a>
-                    </li>
-                <?php elseif ($currentUser['role'] === 'admin'): ?>
-                    <li class="nav-item">
-                        <a class="nav-link" href="<?= APP_URL ?>/admin/dashboard.php">Admin Dashboard</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="<?= APP_URL ?>/auth/logout.php">Logout</a>
-                    </li>
-                <?php elseif ($currentUser['role'] === 'courier'): ?>
-                    <li class="nav-item">
-                        <a class="nav-link" href="<?= APP_URL ?>/deliver/">Courier Dashboard</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="<?= APP_URL ?>/order/">Order Food</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="<?= APP_URL ?>/auth/logout.php">Logout</a>
-                    </li>
-                <?php else: ?>
-                    <li class="nav-item">
-                        <a class="nav-link" href="<?= APP_URL ?>/order/">Dashboard</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="<?= APP_URL ?>/order/history.php">My Orders</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="<?= APP_URL ?>/order/cart.php">
-                            Cart
-                            <?php if ($cartCount > 0): ?>
-                                <span class="badge bg-danger rounded-pill"><?= $cartCount ?></span>
-                            <?php endif; ?>
+<body class="antialiased">
+<div class="wrapper">
+    <header class="navbar navbar-expand-md d-print-none">
+        <div class="container-xl">
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse"
+                    data-bs-target="#navbar-menu" aria-controls="navbar-menu"
+                    aria-expanded="false" aria-label="Toggle navigation">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+
+            <a href="<?= APP_URL ?>/index.php" class="navbar-brand navbar-brand-autodark pe-0 pe-md-3">
+                <span class="navbar-brand-text">DormDash 🍔</span>
+            </a>
+
+            <!-- Right-side items: theme toggle + user dropdown -->
+            <div class="navbar-nav flex-row order-md-last">
+
+                <!-- Theme toggle -->
+                <div class="nav-item me-1">
+                    <a href="<?= APP_URL ?>/api/theme.php?redirect=<?= urlencode($_SERVER['REQUEST_URI'] ?? '/') ?>"
+                       class="nav-link px-2" title="Switch to <?= $theme === 'dark' ? 'light' : 'dark' ?> mode">
+                        <?php if ($theme === 'dark'): ?>
+                            <!-- Sun icon -->
+                            <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="20" height="20" viewBox="0 0 24 24"
+                                 fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <circle cx="12" cy="12" r="5"/>
+                                <path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/>
+                            </svg>
+                        <?php else: ?>
+                            <!-- Moon icon -->
+                            <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="20" height="20" viewBox="0 0 24 24"
+                                 fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
+                            </svg>
+                        <?php endif; ?>
+                    </a>
+                </div>
+
+                <?php if ($currentUser): ?>
+                    <div class="nav-item dropdown">
+                        <a href="#" class="nav-link d-flex lh-1 text-reset p-0 ps-2"
+                           data-bs-toggle="dropdown" aria-label="Open user menu">
+                            <div class="d-none d-xl-block ps-2">
+                                <div class="fw-semibold"><?= htmlspecialchars($currentUser['name'], ENT_QUOTES | ENT_HTML5) ?></div>
+                                <div class="mt-1 small text-muted"><?= ucfirst($currentUser['role']) ?></div>
+                            </div>
+                            <svg xmlns="http://www.w3.org/2000/svg" class="icon ms-1 d-xl-none" width="20" height="20"
+                                 viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                                 stroke-linecap="round" stroke-linejoin="round">
+                                <circle cx="12" cy="8" r="4"/><path d="M20 21a8 8 0 1 0-16 0"/>
+                            </svg>
                         </a>
-                    </li>
-                    <?php if (!$hasCourierApp): ?>
-                        <li class="nav-item">
-                            <a class="nav-link" href="<?= APP_URL ?>/deliver/apply.php">Become a Courier</a>
-                        </li>
-                    <?php endif; ?>
-                    <li class="nav-item">
-                        <a class="nav-link" href="<?= APP_URL ?>/auth/logout.php">Logout</a>
-                    </li>
+                        <div class="dropdown-menu dropdown-menu-end dropdown-menu-arrow">
+                            <a href="<?= APP_URL ?>/auth/logout.php" class="dropdown-item">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="icon dropdown-item-icon" width="16" height="16"
+                                     viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9"/>
+                                </svg>
+                                Sign out
+                            </a>
+                        </div>
+                    </div>
                 <?php endif; ?>
-            </ul>
+            </div>
+
+            <!-- Nav links -->
+            <div class="collapse navbar-collapse" id="navbar-menu">
+                <div class="d-flex flex-column flex-md-row flex-fill align-items-stretch align-items-md-center">
+                    <ul class="navbar-nav">
+                        <?php if (!$currentUser): ?>
+                            <li class="nav-item">
+                                <a class="nav-link" href="<?= APP_URL ?>/auth/login.php">
+                                    <span class="nav-link-title">Login</span>
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link" href="<?= APP_URL ?>/auth/register.php">
+                                    <span class="nav-link-title">Register</span>
+                                </a>
+                            </li>
+                        <?php elseif ($currentUser['role'] === 'admin'): ?>
+                            <li class="nav-item">
+                                <a class="nav-link" href="<?= APP_URL ?>/admin/dashboard.php">
+                                    <span class="nav-link-title">Admin</span>
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link" href="<?= APP_URL ?>/config/">
+                                    <span class="nav-link-title">Settings</span>
+                                </a>
+                            </li>
+                        <?php elseif ($currentUser['role'] === 'courier'): ?>
+                            <li class="nav-item">
+                                <a class="nav-link" href="<?= APP_URL ?>/deliver/">
+                                    <span class="nav-link-title">Deliveries</span>
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link" href="<?= APP_URL ?>/order/">
+                                    <span class="nav-link-title">Order Food</span>
+                                </a>
+                            </li>
+                        <?php else: ?>
+                            <li class="nav-item">
+                                <a class="nav-link" href="<?= APP_URL ?>/order/">
+                                    <span class="nav-link-title">Browse</span>
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link" href="<?= APP_URL ?>/order/history.php">
+                                    <span class="nav-link-title">My Orders</span>
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link" href="<?= APP_URL ?>/order/cart.php">
+                                    <span class="nav-link-title">
+                                        Cart
+                                        <?php if ($cartCount > 0): ?>
+                                            <span class="badge bg-red ms-1"><?= $cartCount ?></span>
+                                        <?php endif; ?>
+                                    </span>
+                                </a>
+                            </li>
+                            <?php if (!$hasCourierApp): ?>
+                                <li class="nav-item">
+                                    <a class="nav-link" href="<?= APP_URL ?>/deliver/apply.php">
+                                        <span class="nav-link-title">Become a Courier</span>
+                                    </a>
+                                </li>
+                            <?php endif; ?>
+                        <?php endif; ?>
+                    </ul>
+                </div>
+            </div>
         </div>
-    </div>
-</nav>
-<main class="container my-4">
+    </header>
+
+    <div class="page-wrapper">
+        <div class="page-body">
+            <div class="container-xl">

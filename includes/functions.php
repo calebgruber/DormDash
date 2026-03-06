@@ -113,3 +113,40 @@ function getCartItemCount(array $cart): int {
     }
     return $count;
 }
+
+function getAppTheme(): string {
+    startAppSession();
+    // Per-user session preference takes priority
+    if (isset($_SESSION['theme']) && in_array($_SESSION['theme'], ['light', 'dark'], true)) {
+        return $_SESSION['theme'];
+    }
+    // Fall back to global DB setting
+    try {
+        $db = getDB();
+        $stmt = $db->prepare("SELECT `value` FROM app_settings WHERE `key` = 'theme' LIMIT 1");
+        $stmt->execute();
+        $row = $stmt->fetch();
+        if ($row && in_array($row['value'], ['light', 'dark'], true)) {
+            return $row['value'];
+        }
+    } catch (Exception $e) {
+        // Table may not exist yet — fall through to default
+    }
+    return 'light';
+}
+
+function setGlobalTheme(string $theme): bool {
+    if (!in_array($theme, ['light', 'dark'], true)) {
+        return false;
+    }
+    try {
+        $db = getDB();
+        $db->prepare(
+            "INSERT INTO app_settings (`key`, `value`) VALUES ('theme', ?)
+             ON DUPLICATE KEY UPDATE `value` = VALUES(`value`)"
+        )->execute([$theme]);
+        return true;
+    } catch (Exception $e) {
+        return false;
+    }
+}

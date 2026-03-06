@@ -67,7 +67,7 @@ $csrf = generateCsrfToken();
 <div class="row justify-content-center">
     <div class="col-md-7 col-lg-6">
         <div class="card shadow-sm border-0">
-            <div class="card-header bg-white fw-bold">Fee Settings</div>
+            <div class="card-header fw-bold">Fee Settings</div>
             <div class="card-body p-4">
                 <form method="POST" action="">
                     <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrf) ?>">

@@ -60,7 +60,7 @@ $revenue = $db->query("SELECT COALESCE(SUM(food_total + delivery_fee + service_f
         ['url' => 'menus.php',       'icon' => '📋', 'title' => 'Menus',       'desc' => 'Manage menu categories and items'],
         ['url' => 'couriers.php',    'icon' => '🚴', 'title' => 'Couriers',    'desc' => 'Review and approve courier applications'],
         ['url' => 'orders.php',      'icon' => '📦', 'title' => 'Orders',      'desc' => 'View and manage all orders'],
-        ['url' => 'config.php',      'icon' => '⚙️', 'title' => 'Config',      'desc' => 'Configure fees and payment settings'],
+        ['url' => 'config.php',      'icon' => '💰', 'title' => 'Payment Config', 'desc' => 'Configure fees and payment settings'],
     ];
     foreach ($navItems as $nav): ?>
         <div class="col-sm-6 col-lg-4">
@@ -75,6 +75,17 @@ $revenue = $db->query("SELECT COALESCE(SUM(food_total + delivery_fee + service_f
             </a>
         </div>
     <?php endforeach; ?>
+    <div class="col-sm-6 col-lg-4">
+        <a href="<?= APP_URL ?>/config/" class="text-decoration-none">
+            <div class="card shadow-sm border-0 h-100">
+                <div class="card-body">
+                    <div class="fs-2 mb-2">⚙️</div>
+                    <h5 class="card-title">App Settings</h5>
+                    <p class="card-text text-muted">Theme, database config, Stripe keys, and migrations</p>
+                </div>
+            </div>
+        </a>
+    </div>
 </div>
 
 <?php require_once __DIR__ . '/../includes/footer.php'; ?>

@@ -1,8 +1,6 @@
--- DormDash full schema (for manual import / reference)
--- The canonical source of truth for incremental changes is sql/migrations/
--- Run migrations via the /config/ admin settings page.
+-- Migration 001: Initial schema
+-- Creates all core tables for DormDash
 
--- Initial tables (mirrors 001_initial_schema.sql)
 CREATE TABLE IF NOT EXISTS `users` (
   `id` INT AUTO_INCREMENT PRIMARY KEY,
   `name` VARCHAR(100) NOT NULL,
@@ -21,7 +19,6 @@ CREATE TABLE IF NOT EXISTS `users` (
   `updated_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 );
 
--- restaurants
 CREATE TABLE IF NOT EXISTS `restaurants` (
   `id` INT AUTO_INCREMENT PRIMARY KEY,
   `name` VARCHAR(100) NOT NULL,
@@ -32,7 +29,6 @@ CREATE TABLE IF NOT EXISTS `restaurants` (
   `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
--- menu_categories
 CREATE TABLE IF NOT EXISTS `menu_categories` (
   `id` INT AUTO_INCREMENT PRIMARY KEY,
   `restaurant_id` INT NOT NULL,
@@ -40,7 +36,6 @@ CREATE TABLE IF NOT EXISTS `menu_categories` (
   FOREIGN KEY (`restaurant_id`) REFERENCES `restaurants`(`id`) ON DELETE CASCADE
 );
 
--- menu_items
 CREATE TABLE IF NOT EXISTS `menu_items` (
   `id` INT AUTO_INCREMENT PRIMARY KEY,
   `category_id` INT NOT NULL,
@@ -52,7 +47,6 @@ CREATE TABLE IF NOT EXISTS `menu_items` (
   FOREIGN KEY (`category_id`) REFERENCES `menu_categories`(`id`) ON DELETE CASCADE
 );
 
--- orders
 CREATE TABLE IF NOT EXISTS `orders` (
   `id` INT AUTO_INCREMENT PRIMARY KEY,
   `customer_id` INT NOT NULL,
@@ -79,7 +73,6 @@ CREATE TABLE IF NOT EXISTS `orders` (
   FOREIGN KEY (`courier_id`) REFERENCES `users`(`id`)
 );
 
--- order_items
 CREATE TABLE IF NOT EXISTS `order_items` (
   `id` INT AUTO_INCREMENT PRIMARY KEY,
   `order_id` INT NOT NULL,
@@ -91,7 +84,6 @@ CREATE TABLE IF NOT EXISTS `order_items` (
   FOREIGN KEY (`menu_item_id`) REFERENCES `menu_items`(`id`)
 );
 
--- order_events
 CREATE TABLE IF NOT EXISTS `order_events` (
   `id` INT AUTO_INCREMENT PRIMARY KEY,
   `order_id` INT NOT NULL,
@@ -104,7 +96,6 @@ CREATE TABLE IF NOT EXISTS `order_events` (
   FOREIGN KEY (`courier_id`) REFERENCES `users`(`id`)
 );
 
--- courier_applications
 CREATE TABLE IF NOT EXISTS `courier_applications` (
   `id` INT AUTO_INCREMENT PRIMARY KEY,
   `user_id` INT NOT NULL,
@@ -115,7 +106,6 @@ CREATE TABLE IF NOT EXISTS `courier_applications` (
   FOREIGN KEY (`user_id`) REFERENCES `users`(`id`)
 );
 
--- payment_config
 CREATE TABLE IF NOT EXISTS `payment_config` (
   `id` INT AUTO_INCREMENT PRIMARY KEY,
   `delivery_fee_type` ENUM('flat','percent') NOT NULL DEFAULT 'flat',
@@ -127,29 +117,10 @@ CREATE TABLE IF NOT EXISTS `payment_config` (
 
 INSERT INTO `payment_config` (`delivery_fee_type`, `delivery_fee_value`, `service_fee_type`, `service_fee_value`, `tip_suggestions`)
 VALUES ('flat', 2.00, 'percent', 5.00, '[0.10, 0.15, 0.20, 0.25]')
-ON DUPLICATE KEY UPDATE id=id;
+ON DUPLICATE KEY UPDATE id = id;
 
 INSERT INTO `restaurants` (`name`, `type`, `location`, `description`, `active`) VALUES
 ('The Dining Hall', 'dining_hall', 'Main Building', 'Main campus dining hall with daily rotating menu', 1),
 ('Einstein Bros Bagels', 'einstein', 'Student Center', 'Bagels, sandwiches, coffee and more', 1),
 ('Boba Tea Co', 'boba', 'Student Center', 'Bubble tea and Asian-inspired drinks', 1)
-ON DUPLICATE KEY UPDATE id=id;
-
--- app_settings (mirrors 002_add_settings.sql)
-CREATE TABLE IF NOT EXISTS `app_settings` (
-  `key`        VARCHAR(100) NOT NULL PRIMARY KEY,
-  `value`      TEXT,
-  `updated_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
-
-INSERT INTO `app_settings` (`key`, `value`) VALUES
-  ('theme',    'light'),
-  ('app_name', 'DormDash')
-ON DUPLICATE KEY UPDATE `key` = `key`;
-
--- migrations tracking table (managed by the app itself)
-CREATE TABLE IF NOT EXISTS `migrations` (
-  `id`         INT AUTO_INCREMENT PRIMARY KEY,
-  `filename`   VARCHAR(255) NOT NULL UNIQUE,
-  `applied_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+ON DUPLICATE KEY UPDATE id = id;
