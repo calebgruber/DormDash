@@ -129,7 +129,7 @@ function getAppTheme(): string {
         if ($row && in_array($row['value'], ['light', 'dark'], true)) {
             return $row['value'];
         }
-    } catch (Exception $e) {
+    } catch (Throwable $e) {
         // Table may not exist yet — fall through to default
     }
     return 'light';
@@ -146,7 +146,7 @@ function setGlobalTheme(string $theme): bool {
              ON DUPLICATE KEY UPDATE `value` = VALUES(`value`)"
         )->execute([$theme]);
         return true;
-    } catch (Exception $e) {
+    } catch (Throwable $e) {
         return false;
     }
 }

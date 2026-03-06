@@ -4,6 +4,7 @@ config/local.php
 # Upload artifacts
 uploads/*
 !uploads/.gitkeep
+!uploads/.htaccess
 
 # OS / editor noise
 .DS_Store

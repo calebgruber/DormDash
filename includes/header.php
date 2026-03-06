@@ -20,7 +20,7 @@ if ($currentUser && $currentUser['role'] === 'customer') {
         $stmt = $db->prepare('SELECT id FROM courier_applications WHERE user_id = ? LIMIT 1');
         $stmt->execute([$currentUser['id']]);
         $hasCourierApp = (bool)$stmt->fetch();
-    } catch (Exception $e) {
+    } catch (Throwable $e) {
         $hasCourierApp = false;
     }
 }

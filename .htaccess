@@ -1,18 +1,18 @@
 RewriteEngine On
 
-# Block direct access to config and includes directories
+# Block direct access to includes directory (PHP includes, not user-facing pages)
 <FilesMatch "\.php$">
-  <If "%{REQUEST_URI} =~ m|^/(config|includes)/|">
+  <If "%{REQUEST_URI} =~ m|^/includes/|">
     Require all denied
   </If>
 </FilesMatch>
 
-# Protect uploads - block script execution
-<Directory "uploads">
-  <FilesMatch "\.(php|php3|php4|php5|phtml|pl|py|jsp|asp|sh|cgi)$">
+# Block direct access to config PHP files, EXCEPT the admin settings page (config/index.php)
+<FilesMatch "\.php$">
+  <If "%{REQUEST_URI} =~ m|^/config/| && %{REQUEST_URI} !~ m|^/config/index\.php$|">
     Require all denied
-  </FilesMatch>
-</Directory>
+  </If>
+</FilesMatch>
 
 # Deny access to hidden files
 <FilesMatch "^\.">

@@ -39,7 +39,7 @@ function getAppliedMigrations(PDO $db): array
         ensureMigrationsTable($db);
         $stmt = $db->query('SELECT filename FROM migrations ORDER BY id ASC');
         return $stmt->fetchAll(PDO::FETCH_COLUMN);
-    } catch (Exception $e) {
+    } catch (Throwable $e) {
         return [];
     }
 }
@@ -109,7 +109,7 @@ function getAppliedMigrationDetails(PDO $db): array
         ensureMigrationsTable($db);
         $stmt = $db->query('SELECT * FROM migrations ORDER BY id ASC');
         return $stmt->fetchAll();
-    } catch (Exception $e) {
+    } catch (Throwable $e) {
         return [];
     }
 }
