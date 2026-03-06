@@ -109,12 +109,89 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     if (!$r['success']) {
                         $errors[] = "Migration <strong>" . htmlspecialchars($file, ENT_QUOTES | ENT_HTML5) . "</strong> failed: "
                             . htmlspecialchars($r['error'], ENT_QUOTES | ENT_HTML5);
+                        logAppError("Migration failed: {$file}", 'error', ['error' => $r['error']]);
                         $ok = false;
                     }
                 }
                 if ($ok) {
                     $success = count($results) . ' migration(s) applied successfully.';
                 }
+            }
+        }
+
+        // ── Email / branding settings ──
+        elseif ($action === 'save_app_settings') {
+            $settingsToSave = [
+                'email_from_address'      => trim($_POST['email_from_address']      ?? ''),
+                'email_from_name'         => trim($_POST['email_from_name']         ?? ''),
+                'closing_warning_minutes' => (int)($_POST['closing_warning_minutes'] ?? 45),
+                'order_cutoff_minutes'    => (int)($_POST['order_cutoff_minutes']    ?? 15),
+            ];
+            foreach ($settingsToSave as $k => $v) {
+                setAppSetting($k, (string)$v);
+            }
+            // Logo upload
+            if (!empty($_FILES['app_logo']['tmp_name']) && $_FILES['app_logo']['error'] !== UPLOAD_ERR_NO_FILE) {
+                $logo = uploadFile($_FILES['app_logo'], UPLOAD_DIR);
+                if ($logo) setAppSetting('app_logo_path', $logo);
+                else $errors[] = 'Invalid logo image.';
+            }
+            // Favicon upload
+            if (!empty($_FILES['app_favicon']['tmp_name']) && $_FILES['app_favicon']['error'] !== UPLOAD_ERR_NO_FILE) {
+                $fav = uploadFile($_FILES['app_favicon'], UPLOAD_DIR);
+                if ($fav) setAppSetting('app_favicon_path', $fav);
+                else $errors[] = 'Invalid favicon image.';
+            }
+            if (empty($errors)) $success = 'App settings saved.';
+        }
+
+        // ── Delete all error logs ──
+        elseif ($action === 'delete_error_logs') {
+            try {
+                $db->exec('DELETE FROM app_error_logs');
+                $success = 'All error logs deleted.';
+            } catch (Throwable $e) {
+                $errors[] = 'Could not delete logs: ' . $e->getMessage();
+            }
+        }
+
+        // ── Meal groups ──
+        elseif ($action === 'add_meal_group') {
+            $rid  = (int)($_POST['mg_restaurant_id'] ?? 0);
+            $name = trim($_POST['mg_name'] ?? '');
+            $desc = trim($_POST['mg_description'] ?? '');
+            if ($rid > 0 && $name) {
+                $db->prepare(
+                    'INSERT INTO meal_groups (restaurant_id, name, description) VALUES (?, ?, ?)'
+                )->execute([$rid, $name, $desc ?: null]);
+                $success = 'Meal group added.';
+            }
+        }
+        elseif ($action === 'delete_meal_group') {
+            $mgId = (int)($_POST['mg_id'] ?? 0);
+            if ($mgId > 0) {
+                $db->prepare('DELETE FROM meal_groups WHERE id = ?')->execute([$mgId]);
+                $success = 'Meal group deleted.';
+            }
+        }
+        elseif ($action === 'add_meal_group_req') {
+            $mgId    = (int)($_POST['mgr_group_id'] ?? 0);
+            $catId   = (int)($_POST['mgr_category_id'] ?? 0) ?: null;
+            $itemId  = (int)($_POST['mgr_item_id'] ?? 0) ?: null;
+            $minQty  = max(1, (int)($_POST['mgr_min_qty'] ?? 1));
+            if ($mgId > 0 && ($catId || $itemId)) {
+                $db->prepare(
+                    'INSERT INTO meal_group_requirements (meal_group_id, category_id, menu_item_id, min_qty)
+                     VALUES (?, ?, ?, ?)'
+                )->execute([$mgId, $catId, $itemId, $minQty]);
+                $success = 'Requirement added.';
+            }
+        }
+        elseif ($action === 'delete_meal_group_req') {
+            $reqId = (int)($_POST['mgr_id'] ?? 0);
+            if ($reqId > 0) {
+                $db->prepare('DELETE FROM meal_group_requirements WHERE id = ?')->execute([$reqId]);
+                $success = 'Requirement deleted.';
             }
         }
     }
@@ -188,27 +265,52 @@ $activeTab = $_GET['tab'] ?? 'appearance';
             <li class="nav-item">
                 <a href="#tab-appearance" class="nav-link <?= $activeTab === 'appearance' ? 'active' : '' ?>"
                    data-bs-toggle="tab">
-                    🎨 Appearance
+                    <i class="ti ti-palette me-1"></i>Appearance
                 </a>
             </li>
             <li class="nav-item">
                 <a href="#tab-database" class="nav-link <?= $activeTab === 'database' ? 'active' : '' ?>"
                    data-bs-toggle="tab">
-                    🗄️ Database
+                    <i class="ti ti-database me-1"></i>Database
                 </a>
             </li>
             <li class="nav-item">
                 <a href="#tab-stripe" class="nav-link <?= $activeTab === 'stripe' ? 'active' : '' ?>"
                    data-bs-toggle="tab">
-                    💳 Stripe
+                    <i class="ti ti-credit-card me-1"></i>Stripe
                 </a>
             </li>
             <li class="nav-item">
                 <a href="#tab-migrations" class="nav-link <?= $activeTab === 'migrations' ? 'active' : '' ?>"
                    data-bs-toggle="tab">
-                    🚀 Migrations
+                    <i class="ti ti-rocket me-1"></i>Migrations
                     <?php if (count($pendingMigrations) > 0): ?>
-                        <span class="badge bg-red ms-1"><?= count($pendingMigrations) ?></span>
+                        <span class="badge bg-danger ms-1"><?= count($pendingMigrations) ?></span>
+                    <?php endif; ?>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a href="#tab-app-settings" class="nav-link <?= $activeTab === 'app-settings' ? 'active' : '' ?>"
+                   data-bs-toggle="tab">
+                    <i class="ti ti-settings me-1"></i>App Settings
+                </a>
+            </li>
+            <li class="nav-item">
+                <a href="#tab-meal-groups" class="nav-link <?= $activeTab === 'meal-groups' ? 'active' : '' ?>"
+                   data-bs-toggle="tab">
+                    <i class="ti ti-salad me-1"></i>Meal Groups
+                </a>
+            </li>
+            <li class="nav-item">
+                <a href="#tab-error-logs" class="nav-link <?= $activeTab === 'error-logs' ? 'active' : '' ?>"
+                   data-bs-toggle="tab">
+                    <i class="ti ti-alert-triangle me-1"></i>Error Logs
+                    <?php
+                    try {
+                        $logCount = (int)$db->query('SELECT COUNT(*) FROM app_error_logs')->fetchColumn();
+                    } catch (Throwable $e) { $logCount = 0; }
+                    if ($logCount > 0): ?>
+                        <span class="badge bg-danger ms-1"><?= $logCount ?></span>
                     <?php endif; ?>
                 </a>
             </li>
@@ -406,11 +508,11 @@ $activeTab = $_GET['tab'] ?? 'appearance';
                             <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrf, ENT_QUOTES | ENT_HTML5) ?>">
                             <input type="hidden" name="action" value="run_migrations">
                             <button type="submit" class="btn btn-primary">
-                                ▶ Run <?= count($pendingMigrations) ?> Pending
+                                Run <?= count($pendingMigrations) ?> Pending
                             </button>
                         </form>
                     <?php else: ?>
-                        <span class="badge bg-green-lt text-green fs-6 px-3 py-2">✓ Up to date</span>
+                        <span class="badge bg-green-lt text-green fs-6 px-3 py-2">Up to date</span>
                     <?php endif; ?>
                 </div>
             </div>
@@ -460,6 +562,251 @@ $activeTab = $_GET['tab'] ?? 'appearance';
                 then click <em>Run Pending</em>. The system runs migrations in filename order
                 and records each one so it is never re-run.
             </div>
+        </div>
+
+        <!-- ── App Settings Tab ──────────────────────────────────────────── -->
+        <div class="tab-pane <?= $activeTab === 'app-settings' ? 'active show' : '' ?>" id="tab-app-settings">
+            <h3 class="card-title mb-4">App Settings</h3>
+            <form method="POST" action="" enctype="multipart/form-data">
+                <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrf, ENT_QUOTES | ENT_HTML5) ?>">
+                <input type="hidden" name="action" value="save_app_settings">
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <label class="form-label fw-semibold">Email From Address</label>
+                        <input type="email" class="form-control" name="email_from_address"
+                               value="<?= htmlspecialchars(getAppSetting('email_from_address', 'no-reply@purchase.edu'), ENT_QUOTES | ENT_HTML5) ?>">
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label fw-semibold">Email From Name</label>
+                        <input type="text" class="form-control" name="email_from_name"
+                               value="<?= htmlspecialchars(getAppSetting('email_from_name', APP_NAME), ENT_QUOTES | ENT_HTML5) ?>">
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label fw-semibold">App Logo <span class="text-muted fw-normal">(optional)</span></label>
+                        <input type="file" class="form-control" name="app_logo" accept="image/*">
+                        <?php $logoPath = getAppSetting('app_logo_path'); if ($logoPath): ?>
+                            <div class="mt-2"><img src="<?= htmlspecialchars(UPLOAD_URL . $logoPath, ENT_QUOTES | ENT_HTML5) ?>" height="40" alt="Current logo"></div>
+                        <?php endif; ?>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label fw-semibold">Favicon <span class="text-muted fw-normal">(optional)</span></label>
+                        <input type="file" class="form-control" name="app_favicon" accept="image/*">
+                        <?php $favPath = getAppSetting('app_favicon_path'); if ($favPath): ?>
+                            <div class="mt-2"><img src="<?= htmlspecialchars(UPLOAD_URL . $favPath, ENT_QUOTES | ENT_HTML5) ?>" height="32" alt="Favicon"></div>
+                        <?php endif; ?>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label fw-semibold">Closing Warning (minutes before close)</label>
+                        <input type="number" class="form-control" name="closing_warning_minutes" min="1" max="180"
+                               value="<?= (int)getAppSetting('closing_warning_minutes', '45') ?>">
+                        <div class="form-text">Show "Closing Soon" badge this many minutes before closing.</div>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label fw-semibold">Order Cutoff (minutes before close)</label>
+                        <input type="number" class="form-control" name="order_cutoff_minutes" min="1" max="60"
+                               value="<?= (int)getAppSetting('order_cutoff_minutes', '15') ?>">
+                        <div class="form-text">Stop accepting new orders this many minutes before closing.</div>
+                    </div>
+                </div>
+                <div class="mt-3">
+                    <button type="submit" class="btn btn-primary">
+                        <i class="ti ti-check me-1"></i>Save App Settings
+                    </button>
+                </div>
+            </form>
+        </div>
+
+        <!-- ── Meal Groups Tab ───────────────────────────────────────────── -->
+        <div class="tab-pane <?= $activeTab === 'meal-groups' ? 'active show' : '' ?>" id="tab-meal-groups">
+            <h3 class="card-title mb-3">Meal Groups</h3>
+            <p class="text-muted mb-4">Define combinations of items (by category or specific item) that qualify as one meal swipe at checkout.</p>
+            <?php
+            $mealGroups = [];
+            try {
+                $mgStmt = $db->query(
+                    'SELECT mg.*, r.name AS restaurant_name
+                     FROM meal_groups mg JOIN restaurants r ON r.id = mg.restaurant_id
+                     ORDER BY r.name, mg.name'
+                );
+                $mealGroups = $mgStmt->fetchAll();
+                foreach ($mealGroups as &$mg) {
+                    $rStmt = $db->prepare(
+                        'SELECT mgr.*, mc.name AS cat_name, mi.name AS item_name
+                         FROM meal_group_requirements mgr
+                         LEFT JOIN menu_categories mc ON mc.id = mgr.category_id
+                         LEFT JOIN menu_items mi ON mi.id = mgr.menu_item_id
+                         WHERE mgr.meal_group_id = ?'
+                    );
+                    $rStmt->execute([$mg['id']]);
+                    $mg['requirements'] = $rStmt->fetchAll();
+                }
+                unset($mg);
+            } catch (Throwable $e) {}
+
+            // Get all restaurants for the add form
+            $mealRestaurants = $db->query('SELECT id, name FROM restaurants ORDER BY name')->fetchAll();
+            // Get all categories for requirement form
+            $mealCategories  = $db->query('SELECT mc.id, mc.name, r.name AS restaurant_name FROM menu_categories mc JOIN restaurants r ON r.id = mc.restaurant_id ORDER BY r.name, mc.name')->fetchAll();
+            ?>
+
+            <?php foreach ($mealGroups as $mg): ?>
+                <div class="card mb-3 border">
+                    <div class="card-header d-flex justify-content-between align-items-center py-2">
+                        <span class="fw-semibold">
+                            <?= htmlspecialchars($mg['name'], ENT_QUOTES | ENT_HTML5) ?>
+                            <small class="text-muted ms-2"><?= htmlspecialchars($mg['restaurant_name'], ENT_QUOTES | ENT_HTML5) ?></small>
+                        </span>
+                        <form method="POST" class="d-inline">
+                            <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrf, ENT_QUOTES | ENT_HTML5) ?>">
+                            <input type="hidden" name="action" value="delete_meal_group">
+                            <input type="hidden" name="mg_id" value="<?= (int)$mg['id'] ?>">
+                            <button class="btn btn-xs btn-outline-danger" onclick="return confirm('Delete meal group?')">
+                                <i class="ti ti-trash"></i>
+                            </button>
+                        </form>
+                    </div>
+                    <div class="card-body p-3">
+                        <p class="text-muted small mb-2"><?= htmlspecialchars($mg['description'] ?? '', ENT_QUOTES | ENT_HTML5) ?></p>
+                        <strong class="small">Requirements:</strong>
+                        <?php if (empty($mg['requirements'])): ?>
+                            <span class="text-muted small ms-2">None — add below</span>
+                        <?php else: ?>
+                            <ul class="list-unstyled ms-2 mt-1">
+                                <?php foreach ($mg['requirements'] as $req): ?>
+                                    <li class="d-flex align-items-center gap-2 mb-1">
+                                        <i class="ti ti-arrow-right text-muted"></i>
+                                        <?php if ($req['category_id']): ?>
+                                            At least <?= (int)$req['min_qty'] ?> item(s) from category: <strong><?= htmlspecialchars($req['cat_name'], ENT_QUOTES | ENT_HTML5) ?></strong>
+                                        <?php else: ?>
+                                            At least <?= (int)$req['min_qty'] ?> × <strong><?= htmlspecialchars($req['item_name'], ENT_QUOTES | ENT_HTML5) ?></strong>
+                                        <?php endif; ?>
+                                        <form method="POST" class="d-inline ms-1">
+                                            <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrf, ENT_QUOTES | ENT_HTML5) ?>">
+                                            <input type="hidden" name="action" value="delete_meal_group_req">
+                                            <input type="hidden" name="mgr_id" value="<?= (int)$req['id'] ?>">
+                                            <button class="btn btn-xs btn-outline-danger"><i class="ti ti-x"></i></button>
+                                        </form>
+                                    </li>
+                                <?php endforeach; ?>
+                            </ul>
+                        <?php endif; ?>
+                        <!-- Add requirement -->
+                        <form method="POST" class="row g-2 mt-2">
+                            <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrf, ENT_QUOTES | ENT_HTML5) ?>">
+                            <input type="hidden" name="action" value="add_meal_group_req">
+                            <input type="hidden" name="mgr_group_id" value="<?= (int)$mg['id'] ?>">
+                            <div class="col-md-5">
+                                <select class="form-select form-select-sm" name="mgr_category_id">
+                                    <option value="">-- By Category --</option>
+                                    <?php foreach ($mealCategories as $mc): ?>
+                                        <option value="<?= (int)$mc['id'] ?>"><?= htmlspecialchars($mc['restaurant_name'] . ' / ' . $mc['name'], ENT_QUOTES | ENT_HTML5) ?></option>
+                                    <?php endforeach; ?>
+                                </select>
+                            </div>
+                            <div class="col-auto">
+                                <input type="number" class="form-control form-control-sm" name="mgr_min_qty" value="1" min="1" style="width:70px" placeholder="Min">
+                            </div>
+                            <div class="col-auto">
+                                <button class="btn btn-sm btn-success"><i class="ti ti-plus me-1"></i>Add Req</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            <?php endforeach; ?>
+
+            <!-- Add new meal group -->
+            <div class="card border-dashed mt-4">
+                <div class="card-body">
+                    <h5 class="fw-semibold mb-3"><i class="ti ti-plus me-2 text-primary"></i>Add Meal Group</h5>
+                    <form method="POST" action="" class="row g-3">
+                        <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrf, ENT_QUOTES | ENT_HTML5) ?>">
+                        <input type="hidden" name="action" value="add_meal_group">
+                        <div class="col-md-4">
+                            <label class="form-label fw-semibold">Restaurant</label>
+                            <select class="form-select" name="mg_restaurant_id" required>
+                                <option value="">Select…</option>
+                                <?php foreach ($mealRestaurants as $r): ?>
+                                    <option value="<?= (int)$r['id'] ?>"><?= htmlspecialchars($r['name'], ENT_QUOTES | ENT_HTML5) ?></option>
+                                <?php endforeach; ?>
+                            </select>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label fw-semibold">Group Name</label>
+                            <input type="text" class="form-control" name="mg_name" placeholder="e.g. Standard Dining Hall Meal" required>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label fw-semibold">Description</label>
+                            <input type="text" class="form-control" name="mg_description" placeholder="Optional description">
+                        </div>
+                        <div class="col-12">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="ti ti-plus me-1"></i>Create Meal Group
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- ── Error Logs Tab ────────────────────────────────────────────── -->
+        <div class="tab-pane <?= $activeTab === 'error-logs' ? 'active show' : '' ?>" id="tab-error-logs">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h3 class="card-title mb-0">Application Error Logs</h3>
+                <form method="POST" action="" onsubmit="return confirm('Delete all error logs?')">
+                    <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrf, ENT_QUOTES | ENT_HTML5) ?>">
+                    <input type="hidden" name="action" value="delete_error_logs">
+                    <button type="submit" class="btn btn-outline-danger btn-sm">
+                        <i class="ti ti-trash me-1"></i>Delete All Logs
+                    </button>
+                </form>
+            </div>
+            <?php
+            $logs = [];
+            try {
+                $logs = $db->query(
+                    'SELECT el.*, u.name AS user_name
+                     FROM app_error_logs el
+                     LEFT JOIN users u ON u.id = el.user_id
+                     ORDER BY el.created_at DESC
+                     LIMIT 200'
+                )->fetchAll();
+            } catch (Throwable $e) {}
+            ?>
+            <?php if (empty($logs)): ?>
+                <div class="alert alert-success"><i class="ti ti-circle-check me-2"></i>No error logs. Everything looks good!</div>
+            <?php else: ?>
+                <div class="table-responsive">
+                    <table class="table table-sm table-hover">
+                        <thead>
+                            <tr><th>Level</th><th>Message</th><th>URL</th><th>User</th><th>Time</th></tr>
+                        </thead>
+                        <tbody>
+                            <?php foreach ($logs as $log): ?>
+                                <tr>
+                                    <td>
+                                        <?php
+                                        $lc = ['error' => 'bg-danger', 'warning' => 'bg-warning text-dark', 'info' => 'bg-info text-dark'][$log['level']] ?? 'bg-secondary';
+                                        ?>
+                                        <span class="badge <?= $lc ?>"><?= htmlspecialchars($log['level'], ENT_QUOTES | ENT_HTML5) ?></span>
+                                    </td>
+                                    <td class="text-break" style="max-width:300px">
+                                        <?= htmlspecialchars(substr($log['message'], 0, 200), ENT_QUOTES | ENT_HTML5) ?>
+                                    </td>
+                                    <td class="text-muted small text-truncate" style="max-width:150px">
+                                        <?= htmlspecialchars($log['url'] ?? '—', ENT_QUOTES | ENT_HTML5) ?>
+                                    </td>
+                                    <td class="text-muted small">
+                                        <?= htmlspecialchars($log['user_name'] ?? '—', ENT_QUOTES | ENT_HTML5) ?>
+                                    </td>
+                                    <td class="text-muted small text-nowrap">
+                                        <?= htmlspecialchars(date('M j g:ia', strtotime($log['created_at'])), ENT_QUOTES | ENT_HTML5) ?>
+                                    </td>
+                                </tr>
+                            <?php endforeach; ?>
+                        </tbody>
+                    </table>
+                </div>
+            <?php endif; ?>
         </div>
 
     </div><!-- /.tab-content -->

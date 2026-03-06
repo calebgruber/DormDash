@@ -5,60 +5,93 @@ requireLogin();
 
 $cart = $_SESSION['cart'] ?? [];
 $csrf = generateCsrfToken();
+
+// Check meal groups
+$matchedGroups = [];
+if (!empty($cart)) {
+    $firstItem = reset($cart);
+    $matchedGroups = checkMealGroups($cart, (int)$firstItem['restaurant_id']);
+}
 ?>
 <?php require_once __DIR__ . '/../includes/header.php'; ?>
 
-<h2 class="mb-4">🛒 Your Cart</h2>
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2 class="fw-bold"><i class="ti ti-shopping-cart me-2 text-primary"></i>Your Cart</h2>
+</div>
 
 <?php if (empty($cart)): ?>
-    <div class="alert alert-info">Your cart is empty.</div>
-    <a href="<?= APP_URL ?>/order/" class="btn btn-primary">Browse Restaurants</a>
+    <div class="alert alert-info"><i class="ti ti-info-circle me-2"></i>Your cart is empty.</div>
+    <a href="<?= APP_URL ?>/order/" class="btn btn-primary">
+        <i class="ti ti-arrow-left me-1"></i> Browse Restaurants
+    </a>
 <?php else: ?>
+    <?php if (!empty($matchedGroups)): ?>
+        <div class="alert alert-success mb-4">
+            <i class="ti ti-star me-2"></i>
+            <strong>Meal Swipe Eligible!</strong>
+            Your cart qualifies for
+            <?php foreach ($matchedGroups as $mg): ?>
+                <strong><?= htmlspecialchars($mg['name'], ENT_QUOTES | ENT_HTML5) ?></strong>
+            <?php endforeach; ?>
+            &mdash; you can apply a meal swipe at checkout.
+        </div>
+    <?php endif; ?>
+
     <div id="cart-message" class="alert d-none mb-3"></div>
 
     <div class="card shadow-sm border-0 mb-4">
         <div class="card-body p-0">
             <div class="table-responsive">
-                <table class="table table-hover mb-0">
-                    <thead class="table-dark">
+                <table class="table table-hover mb-0 align-middle">
+                    <thead>
                         <tr>
                             <th>Item</th>
-                            <th class="text-center" style="width:120px;">Qty</th>
+                            <th class="text-center" style="width:130px;">Qty</th>
                             <th class="text-end">Unit Price</th>
                             <th class="text-end">Subtotal</th>
-                            <th class="text-center">Remove</th>
+                            <th class="text-center" style="width:50px;"></th>
                         </tr>
                     </thead>
                     <tbody id="cart-tbody">
-                        <?php foreach ($cart as $itemId => $item): ?>
-                            <tr id="row-<?= (int)$itemId ?>">
-                                <td class="align-middle"><?= htmlspecialchars($item['name'], ENT_QUOTES | ENT_HTML5) ?></td>
-                                <td class="align-middle text-center">
-                                    <div class="input-group input-group-sm" style="max-width:100px; margin:auto;">
+                        <?php foreach ($cart as $cartKey => $item): ?>
+                            <?php $rowId = preg_replace('/[^a-z0-9_-]/i', '-', $cartKey); ?>
+                            <tr id="row-<?= htmlspecialchars($rowId) ?>">
+                                <td>
+                                    <div class="fw-semibold"><?= htmlspecialchars($item['name'], ENT_QUOTES | ENT_HTML5) ?></div>
+                                    <?php if (!empty($item['options_label'])): ?>
+                                        <small class="text-muted"><i class="ti ti-adjustments-horizontal me-1"></i><?= htmlspecialchars($item['options_label'], ENT_QUOTES | ENT_HTML5) ?></small>
+                                    <?php endif; ?>
+                                </td>
+                                <td class="text-center">
+                                    <div class="input-group input-group-sm" style="max-width:110px; margin:auto;">
                                         <button class="btn btn-outline-secondary qty-btn" type="button"
-                                                data-item-id="<?= (int)$itemId ?>"
+                                                data-cart-key="<?= htmlspecialchars($cartKey) ?>"
                                                 data-action="decrease">-</button>
                                         <input type="number" class="form-control text-center qty-input"
                                                value="<?= (int)$item['quantity'] ?>" min="1" max="99"
-                                               data-item-id="<?= (int)$itemId ?>" readonly>
+                                               data-cart-key="<?= htmlspecialchars($cartKey) ?>" readonly>
                                         <button class="btn btn-outline-secondary qty-btn" type="button"
-                                                data-item-id="<?= (int)$itemId ?>"
+                                                data-cart-key="<?= htmlspecialchars($cartKey) ?>"
                                                 data-action="increase">+</button>
                                     </div>
                                 </td>
-                                <td class="align-middle text-end"><?= formatMoney((float)$item['unit_price']) ?></td>
-                                <td class="align-middle text-end subtotal-cell" data-item-id="<?= (int)$itemId ?>">
+                                <td class="text-end"><?= formatMoney((float)$item['unit_price']) ?></td>
+                                <td class="text-end subtotal-cell"
+                                    data-cart-key="<?= htmlspecialchars($cartKey) ?>"
+                                    data-unit-price="<?= (float)$item['unit_price'] ?>">
                                     <?= formatMoney((float)$item['unit_price'] * (int)$item['quantity']) ?>
                                 </td>
-                                <td class="align-middle text-center">
+                                <td class="text-center">
                                     <button class="btn btn-outline-danger btn-sm remove-btn"
-                                            data-item-id="<?= (int)$itemId ?>">✕</button>
+                                            data-cart-key="<?= htmlspecialchars($cartKey) ?>">
+                                        <i class="ti ti-trash"></i>
+                                    </button>
                                 </td>
                             </tr>
                         <?php endforeach; ?>
                     </tbody>
                     <tfoot>
-                        <tr class="table-light fw-bold">
+                        <tr class="fw-bold">
                             <td colspan="3" class="text-end">Food Total:</td>
                             <td class="text-end" id="food-total"><?= formatMoney(getCartTotal($cart)) ?></td>
                             <td></td>
@@ -70,21 +103,22 @@ $csrf = generateCsrfToken();
     </div>
 
     <div class="d-flex gap-3 flex-wrap">
-        <a href="<?= APP_URL ?>/order/checkout.php" class="btn btn-success btn-lg">Proceed to Checkout →</a>
+        <a href="<?= APP_URL ?>/order/checkout" class="btn btn-primary btn-lg">
+            <i class="ti ti-arrow-right me-1"></i>Proceed to Checkout
+        </a>
         <a href="<?= APP_URL ?>/order/" class="btn btn-outline-secondary">Continue Shopping</a>
     </div>
 
     <script>
-    var csrfToken = '<?= htmlspecialchars($csrf, ENT_QUOTES | ENT_HTML5) ?>';
-    var appUrl = '<?= APP_URL ?>';
+    var csrfToken = <?= json_encode($csrf) ?>;
 
-    function cartRequest(data, callback) {
-        var formData = new FormData();
-        Object.keys(data).forEach(function(k) { formData.append(k, data[k]); });
-        formData.append('csrf_token', csrfToken);
-        fetch('/api/cart', { method: 'POST', body: formData })
+    function cartRequest(data, cb) {
+        var fd = new FormData();
+        Object.keys(data).forEach(function(k) { fd.append(k, data[k]); });
+        fd.append('csrf_token', csrfToken);
+        fetch('/api/cart', { method: 'POST', body: fd })
             .then(function(r) { return r.json(); })
-            .then(callback)
+            .then(cb)
             .catch(function() { showMsg('Request failed.', false); });
     }
 
@@ -95,47 +129,21 @@ $csrf = generateCsrfToken();
         setTimeout(function() { el.classList.add('d-none'); }, 3000);
     }
 
-    function updateFoodTotal() {
-        var total = 0;
-        document.querySelectorAll('[data-item-id]').forEach(function(inp) {
-            if (!inp.classList.contains('qty-input')) return;
-            var itemId = inp.getAttribute('data-item-id');
-            var qty = parseInt(inp.value, 10);
-            var subtotalCell = document.querySelector('.subtotal-cell[data-item-id="' + itemId + '"]');
-            if (subtotalCell) {
-                var unitPrice = parseFloat(subtotalCell.getAttribute('data-unit-price') || 0);
-                total += unitPrice * qty;
-            }
-        });
-    }
-
-    // Cache unit prices from existing subtotals
-    document.querySelectorAll('.qty-input').forEach(function(inp) {
-        var itemId = inp.getAttribute('data-item-id');
-        var qty = parseInt(inp.value, 10);
-        var subtotalCell = document.querySelector('.subtotal-cell[data-item-id="' + itemId + '"]');
-        if (subtotalCell) {
-            var subtotalText = subtotalCell.textContent.replace('$', '').trim();
-            var subtotal = parseFloat(subtotalText) || 0;
-            subtotalCell.setAttribute('data-unit-price', (subtotal / qty).toFixed(2));
-        }
-    });
-
     document.querySelectorAll('.qty-btn').forEach(function(btn) {
         btn.addEventListener('click', function() {
-            var itemId = this.getAttribute('data-item-id');
-            var action = this.getAttribute('data-action');
-            var inp = document.querySelector('.qty-input[data-item-id="' + itemId + '"]');
-            var qty = parseInt(inp.value, 10);
+            var key    = this.dataset.cartKey;
+            var action = this.dataset.action;
+            var inp    = document.querySelector('.qty-input[data-cart-key="' + key + '"]');
+            var qty    = parseInt(inp.value, 10);
             qty = (action === 'increase') ? qty + 1 : Math.max(1, qty - 1);
 
-            cartRequest({ action: 'update', item_id: itemId, quantity: qty }, function(data) {
+            cartRequest({ action: 'update', item_id: 0, cart_key: key, quantity: qty }, function(data) {
                 if (data.success) {
                     inp.value = qty;
-                    var subtotalCell = document.querySelector('.subtotal-cell[data-item-id="' + itemId + '"]');
-                    if (subtotalCell) {
-                        var up = parseFloat(subtotalCell.getAttribute('data-unit-price') || 0);
-                        subtotalCell.textContent = '$' + (up * qty).toFixed(2);
+                    var sc = document.querySelector('.subtotal-cell[data-cart-key="' + key + '"]');
+                    if (sc) {
+                        var up = parseFloat(sc.dataset.unitPrice || 0);
+                        sc.textContent = '$' + (up * qty).toFixed(2);
                     }
                     document.getElementById('food-total').textContent = '$' + data.cart_total;
                 } else {
@@ -147,10 +155,11 @@ $csrf = generateCsrfToken();
 
     document.querySelectorAll('.remove-btn').forEach(function(btn) {
         btn.addEventListener('click', function() {
-            var itemId = this.getAttribute('data-item-id');
-            cartRequest({ action: 'remove', item_id: itemId }, function(data) {
+            var key   = this.dataset.cartKey;
+            var rowId = key.replace(/[^a-z0-9_-]/gi, '-');
+            cartRequest({ action: 'remove', item_id: 0, cart_key: key }, function(data) {
                 if (data.success) {
-                    var row = document.getElementById('row-' + itemId);
+                    var row = document.getElementById('row-' + rowId);
                     if (row) row.remove();
                     document.getElementById('food-total').textContent = '$' + data.cart_total;
                     if (data.cart_count === 0) location.reload();

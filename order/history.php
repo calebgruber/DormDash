@@ -102,7 +102,7 @@ $orders = $stmt->fetchAll();
                                     <div class="d-flex justify-content-between fw-bold"><span>Total</span><span><?= formatMoney($total) ?></span></div>
                                 </div>
                                 <?php if ($order['delivery_address']): ?>
-                                    <p class="mt-2 small text-muted">📍 <?= htmlspecialchars($order['delivery_address'], ENT_QUOTES | ENT_HTML5) ?></p>
+                                    <p class="mt-2 small text-muted"><i class="ti ti-map-pin me-1"></i><?= htmlspecialchars($order['delivery_address'], ENT_QUOTES | ENT_HTML5) ?></p>
                                 <?php endif; ?>
                             </div>
                             <div class="col-md-6">
@@ -129,6 +129,18 @@ $orders = $stmt->fetchAll();
                                     <p class="text-muted small">No events yet.</p>
                                 <?php endif; ?>
                             </div>
+                        </div>
+
+                        <!-- Support link -->
+                        <div class="mt-3 pt-3 border-top">
+                            <?php $unreadReplies = countUnreadAdminReplies((int)$order['id'], (int)$user['id']); ?>
+                            <a href="<?= APP_URL ?>/order/support?order_id=<?= (int)$order['id'] ?>"
+                               class="btn btn-sm btn-outline-secondary">
+                                <i class="ti ti-message-circle me-1"></i>Contact Support
+                                <?php if ($unreadReplies > 0): ?>
+                                    <span class="badge bg-danger ms-1"><?= $unreadReplies ?></span>
+                                <?php endif; ?>
+                            </a>
                         </div>
                     </div>
                 </div>

@@ -56,18 +56,19 @@ $revenue = $db->query("SELECT COALESCE(SUM(food_total + delivery_fee + service_f
 <div class="row g-3">
     <?php
     $navItems = [
-        ['url' => 'restaurants.php', 'icon' => '🍽️', 'title' => 'Restaurants', 'desc' => 'Add, edit, or toggle campus restaurants'],
-        ['url' => 'menus.php',       'icon' => '📋', 'title' => 'Menus',       'desc' => 'Manage menu categories and items'],
-        ['url' => 'couriers.php',    'icon' => '🚴', 'title' => 'Couriers',    'desc' => 'Review and approve courier applications'],
-        ['url' => 'orders.php',      'icon' => '📦', 'title' => 'Orders',      'desc' => 'View and manage all orders'],
-        ['url' => 'config.php',      'icon' => '💰', 'title' => 'Payment Config', 'desc' => 'Configure fees and payment settings'],
+        ['url' => 'restaurants', 'icon' => 'ti-tools-kitchen-2', 'title' => 'Restaurants', 'desc' => 'Add, edit, or toggle campus restaurants'],
+        ['url' => 'menus',       'icon' => 'ti-clipboard-list', 'title' => 'Menus',       'desc' => 'Manage menu categories and items'],
+        ['url' => 'couriers',    'icon' => 'ti-bike',           'title' => 'Couriers',    'desc' => 'Review and approve courier applications'],
+        ['url' => 'orders',      'icon' => 'ti-package',        'title' => 'Orders',      'desc' => 'View and manage all orders'],
+        ['url' => 'support',     'icon' => 'ti-message-circle', 'title' => 'Support',     'desc' => 'Customer support messages'],
+        ['url' => '../config/',  'icon' => 'ti-settings',       'title' => 'Settings',    'desc' => 'Configure fees, emails, and app settings'],
     ];
     foreach ($navItems as $nav): ?>
         <div class="col-sm-6 col-lg-4">
             <a href="<?= APP_URL ?>/admin/<?= $nav['url'] ?>" class="text-decoration-none">
                 <div class="card shadow-sm border-0 h-100 hover-card">
                     <div class="card-body">
-                        <div class="fs-2 mb-2"><?= $nav['icon'] ?></div>
+                        <div class="mb-2"><i class="ti <?= htmlspecialchars($nav['icon']) ?> fs-1 text-primary"></i></div>
                         <h5 class="card-title"><?= $nav['title'] ?></h5>
                         <p class="card-text text-muted"><?= $nav['desc'] ?></p>
                     </div>

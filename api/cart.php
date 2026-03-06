@@ -46,7 +46,7 @@ if ($action === 'add') {
 
     // Validate item exists and is active
     $stmt = $db->prepare(
-        'SELECT mi.*, mc.restaurant_id
+        'SELECT mi.*, mc.restaurant_id, mc.id AS category_id
          FROM menu_items mi
          JOIN menu_categories mc ON mc.id = mi.category_id
          WHERE mi.id = ? AND mi.active = 1'
@@ -59,6 +59,15 @@ if ($action === 'add') {
         exit;
     }
 
+    // Parse options (JSON from customization modal)
+    $optionsRaw  = trim($_POST['options'] ?? '');
+    $options     = ($optionsRaw && $optionsRaw !== '{}') ? json_decode($optionsRaw, true) : [];
+    $extraPrice  = (float)($_POST['extra_price'] ?? 0);
+    $unitPrice   = (float)$item['base_price'] + $extraPrice;
+
+    // Generate a cart key: item ID alone if no options, composite if options present
+    $cartKey = $options ? $itemId . '_' . substr(md5($optionsRaw), 0, 8) : (string)$itemId;
+
     // Validate same restaurant
     if (!empty($_SESSION['cart'])) {
         $firstItem = reset($_SESSION['cart']);
@@ -68,15 +77,28 @@ if ($action === 'add') {
         }
     }
 
-    if (isset($_SESSION['cart'][$itemId])) {
-        $_SESSION['cart'][$itemId]['quantity'] += 1;
+    // Build option label for display
+    $optLabel = '';
+    if ($options) {
+        $parts = [];
+        foreach ($options as $grp) {
+            $choiceNames = array_column($grp['choices'], 'name');
+            $parts[] = $grp['name'] . ': ' . implode(', ', $choiceNames);
+        }
+        $optLabel = implode(' | ', $parts);
+    }
+
+    if (isset($_SESSION['cart'][$cartKey]) && !$options) {
+        $_SESSION['cart'][$cartKey]['quantity'] += 1;
     } else {
-        $_SESSION['cart'][$itemId] = [
+        $_SESSION['cart'][$cartKey] = [
             'item_id'             => $itemId,
             'name'                => $item['name'],
-            'unit_price'          => (float)$item['base_price'],
+            'unit_price'          => $unitPrice,
             'quantity'            => 1,
-            'customizations_text' => '',
+            'category_id'         => (int)$item['category_id'],
+            'options'             => $options ?: null,
+            'options_label'       => $optLabel,
             'restaurant_id'       => (int)$item['restaurant_id'],
         ];
     }
@@ -93,8 +115,9 @@ if ($action === 'add') {
 }
 
 if ($action === 'remove') {
-    if (isset($_SESSION['cart'][$itemId])) {
-        unset($_SESSION['cart'][$itemId]);
+    $cartKey = trim($_POST['cart_key'] ?? (string)$itemId);
+    if (isset($_SESSION['cart'][$cartKey])) {
+        unset($_SESSION['cart'][$cartKey]);
     }
     $cartCount = getCartItemCount($_SESSION['cart']);
     $cartTotal = number_format(getCartTotal($_SESSION['cart']), 2);
@@ -103,10 +126,11 @@ if ($action === 'remove') {
 }
 
 if ($action === 'update') {
+    $cartKey = trim($_POST['cart_key'] ?? (string)$itemId);
     if ($quantity <= 0) {
-        unset($_SESSION['cart'][$itemId]);
-    } elseif (isset($_SESSION['cart'][$itemId])) {
-        $_SESSION['cart'][$itemId]['quantity'] = $quantity;
+        unset($_SESSION['cart'][$cartKey]);
+    } elseif (isset($_SESSION['cart'][$cartKey])) {
+        $_SESSION['cart'][$cartKey]['quantity'] = $quantity;
     }
     $cartCount = getCartItemCount($_SESSION['cart']);
     $cartTotal = number_format(getCartTotal($_SESSION['cart']), 2);

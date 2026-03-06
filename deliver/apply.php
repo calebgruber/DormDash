@@ -26,11 +26,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     } elseif ($existingApp && in_array($existingApp['status'], ['pending', 'approved'], true)) {
         $errors[] = 'You already have a pending or approved application.';
     } else {
-        $phone   = trim($_POST['phone'] ?? '');
-        $morLast4 = preg_replace('/\D/', '', trim($_POST['mor_last4'] ?? ''));
+        $phone = trim($_POST['phone'] ?? '');
 
         if (empty($phone)) $errors[] = 'Phone number is required.';
-        if (strlen($morLast4) !== 4) $errors[] = 'MOR card last 4 digits must be exactly 4 digits.';
 
         $photoPath = null;
         if (isset($_FILES['mor_photo']) && $_FILES['mor_photo']['error'] !== UPLOAD_ERR_NO_FILE) {
@@ -45,9 +43,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             try {
                 $db->beginTransaction();
 
-                // Update user phone & MOR info
-                $updStmt = $db->prepare('UPDATE users SET phone = ?, mor_last4 = ?, mor_photo_path = ? WHERE id = ?');
-                $updStmt->execute([$phone, $morLast4, $photoPath, $user['id']]);
+                // Update user phone & MORE card photo
+                $updStmt = $db->prepare('UPDATE users SET phone = ?, mor_photo_path = ? WHERE id = ?');
+                $updStmt->execute([$phone, $photoPath, $user['id']]);
 
                 // Create application
                 $insStmt = $db->prepare('INSERT INTO courier_applications (user_id) VALUES (?)');
@@ -91,8 +89,8 @@ $csrf = generateCsrfToken();
 
             <div class="card shadow-sm border-0 mb-4">
                 <div class="card-body">
-                    <h5 class="card-title mb-1">What is a MOR Card?</h5>
-                    <p class="text-muted small mb-0">A MOR (Meal on Record) card is your SUNY Purchase meal plan card. Couriers use this to pay for dining hall orders on behalf of customers. Your last 4 digits help verify your identity.</p>
+                    <h5 class="card-title mb-1"><i class="ti ti-id-badge-2 me-2 text-primary"></i>What is a MORE Card?</h5>
+                    <p class="text-muted small mb-0">A MORE card is your SUNY Purchase meal plan card. As a courier, you'll use your MORE card to pay for dining hall orders on behalf of customers who will reimburse you via Stripe.</p>
                 </div>
             </div>
 
@@ -107,21 +105,16 @@ $csrf = generateCsrfToken();
                                    value="<?= htmlspecialchars($_POST['phone'] ?? $user['phone'] ?? '', ENT_QUOTES | ENT_HTML5) ?>" required>
                         </div>
 
-                        <div class="mb-3">
-                            <label class="form-label fw-semibold" for="mor_last4">MOR Card Last 4 Digits</label>
-                            <input type="text" class="form-control" id="mor_last4" name="mor_last4"
-                                   maxlength="4" pattern="\d{4}" placeholder="XXXX"
-                                   value="<?= htmlspecialchars($_POST['mor_last4'] ?? '', ENT_QUOTES | ENT_HTML5) ?>" required>
-                        </div>
-
                         <div class="mb-4">
-                            <label class="form-label fw-semibold" for="mor_photo">MOR Card Photo <span class="text-muted">(optional but recommended)</span></label>
+                            <label class="form-label fw-semibold" for="mor_photo">MORE Card Photo <span class="text-muted">(optional but recommended)</span></label>
                             <input type="file" class="form-control" id="mor_photo" name="mor_photo" accept="image/*">
-                            <div class="form-text">Upload a photo of your MOR card (image only). This helps verify your identity.</div>
+                            <div class="form-text">Upload a photo of your MORE card to verify you have a meal plan.</div>
                         </div>
 
                         <div class="d-grid">
-                            <button type="submit" class="btn btn-primary btn-lg">Submit Application</button>
+                            <button type="submit" class="btn btn-primary btn-lg">
+                                <i class="ti ti-send me-1"></i>Submit Application
+                            </button>
                         </div>
                     </form>
                 </div>
