@@ -169,7 +169,7 @@ $csrf = generateCsrfToken();
             </div>
 
             <?php if (!in_array($detailOrder['status'], ['delivered', 'cancelled'], true)): ?>
-            <form method="POST" action="<?= APP_URL ?>/api/order_event.php">
+            <form method="POST" action="/api/order_event">
                 <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrf) ?>">
                 <input type="hidden" name="order_id" value="<?= (int)$detailOrder['id'] ?>">
                 <input type="hidden" name="event_type" value="cancel">

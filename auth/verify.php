@@ -19,7 +19,7 @@ if (empty($token)) {
         if ($user) {
             $upd = $db->prepare('UPDATE users SET email_verified = 1, email_verify_token = NULL WHERE id = ?');
             $upd->execute([$user['id']]);
-            header('Location: ' . APP_URL . '/auth/login.php?verified=1');
+            header('Location: ' . APP_URL . '/auth/login?verified=1');
             exit;
         } else {
             $isError = true;

@@ -134,7 +134,7 @@ if (isset($_SESSION['cart']) && is_array($_SESSION['cart'])) {
             formData.append('quantity', '1');
             formData.append('csrf_token', '<?= htmlspecialchars($csrf, ENT_QUOTES | ENT_HTML5) ?>');
 
-            fetch('<?= APP_URL ?>/api/cart.php', {
+            fetch('/api/cart', {
                 method: 'POST',
                 body: formData
             })
@@ -188,7 +188,7 @@ if (isset($_SESSION['cart']) && is_array($_SESSION['cart'])) {
                     'estimated_food_total'=> $estimatedTotal,
                     'order_type'          => 'prepaid_pickup',
                 ];
-                header('Location: ' . APP_URL . '/order/checkout.php');
+                header('Location: ' . APP_URL . '/order/checkout');
                 exit;
             }
         }

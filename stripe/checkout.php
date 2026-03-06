@@ -28,7 +28,7 @@ if (!$order) {
 
 if ($order['payment_status'] !== 'pending') {
     // Already paid or failed
-    header('Location: ' . APP_URL . '/order/history.php');
+    header('Location: ' . APP_URL . '/order/history');
     exit;
 }
 

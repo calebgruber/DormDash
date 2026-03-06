@@ -82,7 +82,7 @@ $csrf = generateCsrfToken();
         var formData = new FormData();
         Object.keys(data).forEach(function(k) { formData.append(k, data[k]); });
         formData.append('csrf_token', csrfToken);
-        fetch(appUrl + '/api/cart.php', { method: 'POST', body: formData })
+        fetch('/api/cart', { method: 'POST', body: formData })
             .then(function(r) { return r.json(); })
             .then(callback)
             .catch(function() { showMsg('Request failed.', false); });

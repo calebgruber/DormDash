@@ -22,7 +22,7 @@ function currentUser(): ?array {
 
 function requireLogin(): void {
     if (!isLoggedIn()) {
-        header('Location: ' . APP_URL . '/auth/login.php');
+        header('Location: ' . APP_URL . '/auth/login');
         exit;
     }
 }
@@ -31,7 +31,7 @@ function requireRole(string $role): void {
     requireLogin();
     $user = currentUser();
     if (!$user || $user['role'] !== $role) {
-        header('Location: ' . APP_URL . '/index.php');
+        header('Location: ' . APP_URL . '/');
         exit;
     }
 }

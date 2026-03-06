@@ -1,0 +1,4 @@
+# Block all direct HTTP access to PHP include files.
+<FilesMatch "\.php$">
+  Require all denied
+</FilesMatch>

@@ -208,7 +208,7 @@ document.querySelectorAll('.event-form').forEach(function(form) {
         var btn = this.querySelector('button[type=submit]');
         if (btn) { btn.disabled = true; btn.textContent = 'Processing...'; }
 
-        fetch('<?= APP_URL ?>/api/order_event.php', { method: 'POST', body: formData })
+        fetch('/api/order_event', { method: 'POST', body: formData })
             .then(function(r) { return r.json(); })
             .then(function(data) {
                 var msgEl = document.getElementById('event-message');

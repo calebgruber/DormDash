@@ -5,7 +5,7 @@ startAppSession();
 if (isLoggedIn()) {
     $u = currentUser();
     if ($u['role'] === 'admin') {
-        header('Location: ' . APP_URL . '/admin/dashboard.php');
+        header('Location: ' . APP_URL . '/admin/dashboard');
     } elseif ($u['role'] === 'courier' && $u['courier_approved']) {
         header('Location: ' . APP_URL . '/deliver/');
     } else {
@@ -44,7 +44,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     $_SESSION['user']    = $user;
 
                     if ($user['role'] === 'admin') {
-                        header('Location: ' . APP_URL . '/admin/dashboard.php');
+                        header('Location: ' . APP_URL . '/admin/dashboard');
                     } elseif ($user['role'] === 'courier' && $user['courier_approved']) {
                         header('Location: ' . APP_URL . '/deliver/');
                     } else {

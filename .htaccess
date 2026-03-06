@@ -1,20 +1,19 @@
 RewriteEngine On
 
-# Block direct access to includes directory (PHP includes, not user-facing pages)
-<FilesMatch "\.php$">
-  <If "%{REQUEST_URI} =~ m|^/includes/|">
-    Require all denied
-  </If>
-</FilesMatch>
+# ── Remove .php extension from browser URLs ──────────────────────────────
+# Skip POST requests to preserve API/webhook functionality
+RewriteCond %{REQUEST_METHOD} !POST
+RewriteCond %{THE_REQUEST} \s/+(.*?)\.php[\s?] [NC]
+RewriteRule ^ /%1 [R=301,L,QSA]
 
-# Block direct access to config PHP files, EXCEPT the admin settings page (config/index.php)
-<FilesMatch "\.php$">
-  <If "%{REQUEST_URI} =~ m|^/config/| && %{REQUEST_URI} !~ m|^/config/index\.php$|">
-    Require all denied
-  </If>
-</FilesMatch>
+# Internally serve *.php for extensionless URL requests
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME}.php -f
+RewriteRule ^(.+?)/?$ /$1.php [L,QSA]
 
-# Deny access to hidden files
+# ── Security ──────────────────────────────────────────────────────────────
+# Deny access to hidden files (.env, .htaccess, .git, etc.)
 <FilesMatch "^\.">
   Require all denied
 </FilesMatch>

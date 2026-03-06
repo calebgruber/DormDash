@@ -116,7 +116,7 @@ document.querySelectorAll('.accept-form').forEach(function(form) {
         btn.disabled = true;
         btn.textContent = 'Accepting...';
 
-        fetch('<?= APP_URL ?>/api/order_event.php', { method: 'POST', body: formData })
+        fetch('/api/order_event', { method: 'POST', body: formData })
             .then(function(r) { return r.json(); })
             .then(function(data) {
                 var msgEl = document.getElementById('event-message');

@@ -1,11 +1,22 @@
 <?php
 require_once __DIR__ . '/../config/app.php';
+require_once __DIR__ . '/functions.php';
+
+function getEmailHeaders(): string {
+    $fromAddr = getAppSetting('email_from_address', 'no-reply@purchase.edu');
+    $fromName = getAppSetting('email_from_name',    APP_NAME);
+    $encoded  = '=?UTF-8?B?' . base64_encode($fromName) . '?=';
+    return "From: {$encoded} <{$fromAddr}>\r\n"
+         . "Reply-To: {$fromAddr}\r\n"
+         . "X-Mailer: PHP/" . phpversion() . "\r\n"
+         . "Content-Type: text/plain; charset=UTF-8\r\n";
+}
 
 function sendVerificationEmail(array $user, string $token): bool {
-    $to = $user['email'];
-    $subject = APP_NAME . ' - Verify Your Email Address';
-    $verifyUrl = APP_URL . '/auth/verify.php?token=' . urlencode($token);
-    $name = htmlspecialchars($user['name'], ENT_QUOTES | ENT_HTML5);
+    $to         = $user['email'];
+    $subject    = APP_NAME . ' - Verify Your Email Address';
+    $verifyUrl  = APP_URL . '/auth/verify?token=' . urlencode($token);
+    $name       = htmlspecialchars($user['name'], ENT_QUOTES | ENT_HTML5);
 
     $message = "Hello {$name},\n\n"
         . "Thank you for registering with " . APP_NAME . "!\n\n"
@@ -14,18 +25,13 @@ function sendVerificationEmail(array $user, string $token): bool {
         . "If you did not create an account, you can safely ignore this email.\n\n"
         . "Thanks,\n" . APP_NAME . " Team\nSUNY Purchase";
 
-    $headers = "From: no-reply@purchase.edu\r\n"
-        . "Reply-To: no-reply@purchase.edu\r\n"
-        . "X-Mailer: PHP/" . phpversion();
-
-    return mail($to, $subject, $message, $headers);
+    return mail($to, $subject, $message, getEmailHeaders());
 }
 
 function sendOrderConfirmation(array $order, array $user): bool {
-    $to = $user['email'];
+    $to      = $user['email'];
     $subject = APP_NAME . ' - Order #' . $order['id'] . ' Confirmed';
-    $name = htmlspecialchars($user['name'], ENT_QUOTES | ENT_HTML5);
-    $ordersUrl = APP_URL . '/order/history.php';
+    $name    = htmlspecialchars($user['name'], ENT_QUOTES | ENT_HTML5);
 
     $total = number_format(
         (float)$order['food_total'] + (float)$order['delivery_fee'] +
@@ -34,22 +40,17 @@ function sendOrderConfirmation(array $order, array $user): bool {
     );
 
     $message = "Hello {$name},\n\n"
-        . "Your order #" . $order['id'] . " has been placed successfully!\n\n"
+        . "Your order #{$order['id']} has been placed successfully!\n\n"
         . "Order Total: \${$total}\n"
-        . "Delivery Address: " . $order['delivery_address'] . "\n\n"
+        . "Delivery Address: " . ($order['delivery_address'] ?? 'N/A') . "\n\n"
         . "A courier will accept your order shortly.\n\n"
-        . "Track your order: " . $ordersUrl . "\n\n"
+        . "Track your order: " . APP_URL . "/order/history\n\n"
         . "Thanks,\n" . APP_NAME . " Team";
 
-    $headers = "From: no-reply@purchase.edu\r\n"
-        . "Reply-To: no-reply@purchase.edu\r\n"
-        . "X-Mailer: PHP/" . phpversion();
-
-    return mail($to, $subject, $message, $headers);
+    return mail($to, $subject, $message, getEmailHeaders());
 }
 
 function sendOrderStatusUpdate(array $order, array $user, string $newStatus): bool {
-    $to = $user['email'];
     $statusLabels = [
         'open'           => 'Waiting for Courier',
         'accepted'       => 'Courier Accepted',
@@ -59,18 +60,14 @@ function sendOrderStatusUpdate(array $order, array $user, string $newStatus): bo
         'cancelled'      => 'Cancelled',
     ];
     $statusLabel = $statusLabels[$newStatus] ?? ucfirst($newStatus);
-    $subject = APP_NAME . ' - Order #' . $order['id'] . ' Status Update: ' . $statusLabel;
-    $name = htmlspecialchars($user['name'], ENT_QUOTES | ENT_HTML5);
-    $ordersUrl = APP_URL . '/order/history.php';
+    $to          = $user['email'];
+    $subject     = APP_NAME . ' - Order #' . $order['id'] . ' Status Update: ' . $statusLabel;
+    $name        = htmlspecialchars($user['name'], ENT_QUOTES | ENT_HTML5);
 
     $message = "Hello {$name},\n\n"
-        . "Your order #" . $order['id'] . " status has been updated to: {$statusLabel}\n\n"
-        . "Track your order: " . $ordersUrl . "\n\n"
+        . "Your order #{$order['id']} status has been updated to: {$statusLabel}\n\n"
+        . "Track your order: " . APP_URL . "/order/history\n\n"
         . "Thanks,\n" . APP_NAME . " Team";
 
-    $headers = "From: no-reply@purchase.edu\r\n"
-        . "Reply-To: no-reply@purchase.edu\r\n"
-        . "X-Mailer: PHP/" . phpversion();
-
-    return mail($to, $subject, $message, $headers);
+    return mail($to, $subject, $message, getEmailHeaders());
 }
