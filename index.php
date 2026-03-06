@@ -8,10 +8,10 @@ if ($user) {
         header('Location: ' . APP_URL . '/admin/dashboard.php');
         exit;
     } elseif ($user['role'] === 'courier' && $user['courier_approved']) {
-        header('Location: ' . APP_URL . '/courier/dashboard.php');
+        header('Location: ' . APP_URL . '/deliver/');
         exit;
     } else {
-        header('Location: ' . APP_URL . '/customer/dashboard.php');
+        header('Location: ' . APP_URL . '/order/');
         exit;
     }
 }

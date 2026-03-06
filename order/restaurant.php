@@ -5,7 +5,7 @@ requireLogin();
 
 $restaurantId = (int)($_GET['id'] ?? 0);
 if ($restaurantId <= 0) {
-    header('Location: ' . APP_URL . '/customer/dashboard.php');
+    header('Location: ' . APP_URL . '/order/');
     exit;
 }
 
@@ -15,7 +15,7 @@ $stmt->execute([$restaurantId]);
 $restaurant = $stmt->fetch();
 
 if (!$restaurant) {
-    header('Location: ' . APP_URL . '/customer/dashboard.php');
+    header('Location: ' . APP_URL . '/order/');
     exit;
 }
 
@@ -50,7 +50,7 @@ if (isset($_SESSION['cart']) && is_array($_SESSION['cart'])) {
 
 <nav aria-label="breadcrumb" class="mb-3">
     <ol class="breadcrumb">
-        <li class="breadcrumb-item"><a href="<?= APP_URL ?>/customer/dashboard.php">Restaurants</a></li>
+        <li class="breadcrumb-item"><a href="<?= APP_URL ?>/order/">Restaurants</a></li>
         <li class="breadcrumb-item active"><?= htmlspecialchars($restaurant['name'], ENT_QUOTES | ENT_HTML5) ?></li>
     </ol>
 </nav>
@@ -69,7 +69,7 @@ if (isset($_SESSION['cart']) && is_array($_SESSION['cart'])) {
     <!-- Cart info bar -->
     <div id="cart-bar" class="alert alert-info d-flex justify-content-between align-items-center mb-4 <?= $cartCount === 0 ? 'd-none' : '' ?>">
         <span>🛒 <strong id="cart-count-text"><?= $cartCount ?></strong> item(s) in cart</span>
-        <a href="<?= APP_URL ?>/customer/cart.php" class="btn btn-sm btn-primary">View Cart</a>
+        <a href="<?= APP_URL ?>/order/cart.php" class="btn btn-sm btn-primary">View Cart</a>
     </div>
 
     <div id="add-message" class="alert alert-success d-none mb-3"></div>
@@ -188,7 +188,7 @@ if (isset($_SESSION['cart']) && is_array($_SESSION['cart'])) {
                     'estimated_food_total'=> $estimatedTotal,
                     'order_type'          => 'prepaid_pickup',
                 ];
-                header('Location: ' . APP_URL . '/customer/checkout.php');
+                header('Location: ' . APP_URL . '/order/checkout.php');
                 exit;
             }
         }

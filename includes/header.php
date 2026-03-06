@@ -63,23 +63,23 @@ if ($currentUser && $currentUser['role'] === 'customer') {
                     </li>
                 <?php elseif ($currentUser['role'] === 'courier'): ?>
                     <li class="nav-item">
-                        <a class="nav-link" href="<?= APP_URL ?>/courier/dashboard.php">Courier Dashboard</a>
+                        <a class="nav-link" href="<?= APP_URL ?>/deliver/">Courier Dashboard</a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="<?= APP_URL ?>/customer/dashboard.php">Order Food</a>
+                        <a class="nav-link" href="<?= APP_URL ?>/order/">Order Food</a>
                     </li>
                     <li class="nav-item">
                         <a class="nav-link" href="<?= APP_URL ?>/auth/logout.php">Logout</a>
                     </li>
                 <?php else: ?>
                     <li class="nav-item">
-                        <a class="nav-link" href="<?= APP_URL ?>/customer/dashboard.php">Dashboard</a>
+                        <a class="nav-link" href="<?= APP_URL ?>/order/">Dashboard</a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="<?= APP_URL ?>/customer/orders.php">My Orders</a>
+                        <a class="nav-link" href="<?= APP_URL ?>/order/history.php">My Orders</a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="<?= APP_URL ?>/customer/cart.php">
+                        <a class="nav-link" href="<?= APP_URL ?>/order/cart.php">
                             Cart
                             <?php if ($cartCount > 0): ?>
                                 <span class="badge bg-danger rounded-pill"><?= $cartCount ?></span>
@@ -88,7 +88,7 @@ if ($currentUser && $currentUser['role'] === 'customer') {
                     </li>
                     <?php if (!$hasCourierApp): ?>
                         <li class="nav-item">
-                            <a class="nav-link" href="<?= APP_URL ?>/courier/apply.php">Become a Courier</a>
+                            <a class="nav-link" href="<?= APP_URL ?>/deliver/apply.php">Become a Courier</a>
                         </li>
                     <?php endif; ?>
                     <li class="nav-item">

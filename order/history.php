@@ -22,7 +22,7 @@ $orders = $stmt->fetchAll();
 
 <?php if (empty($orders)): ?>
     <div class="alert alert-info">You haven't placed any orders yet.</div>
-    <a href="<?= APP_URL ?>/customer/dashboard.php" class="btn btn-primary">Order Food</a>
+    <a href="<?= APP_URL ?>/order/" class="btn btn-primary">Order Food</a>
 <?php else: ?>
     <div class="accordion" id="ordersAccordion">
         <?php foreach ($orders as $order): ?>

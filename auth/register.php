@@ -4,7 +4,7 @@ require_once __DIR__ . '/../includes/email.php';
 startAppSession();
 
 if (isLoggedIn()) {
-    header('Location: ' . APP_URL . '/customer/dashboard.php');
+    header('Location: ' . APP_URL . '/order/');
     exit;
 }
 

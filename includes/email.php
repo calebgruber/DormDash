@@ -25,7 +25,7 @@ function sendOrderConfirmation(array $order, array $user): bool {
     $to = $user['email'];
     $subject = APP_NAME . ' - Order #' . $order['id'] . ' Confirmed';
     $name = htmlspecialchars($user['name'], ENT_QUOTES | ENT_HTML5);
-    $ordersUrl = APP_URL . '/customer/orders.php';
+    $ordersUrl = APP_URL . '/order/history.php';
 
     $total = number_format(
         (float)$order['food_total'] + (float)$order['delivery_fee'] +
@@ -61,7 +61,7 @@ function sendOrderStatusUpdate(array $order, array $user, string $newStatus): bo
     $statusLabel = $statusLabels[$newStatus] ?? ucfirst($newStatus);
     $subject = APP_NAME . ' - Order #' . $order['id'] . ' Status Update: ' . $statusLabel;
     $name = htmlspecialchars($user['name'], ENT_QUOTES | ENT_HTML5);
-    $ordersUrl = APP_URL . '/customer/orders.php';
+    $ordersUrl = APP_URL . '/order/history.php';
 
     $message = "Hello {$name},\n\n"
         . "Your order #" . $order['id'] . " status has been updated to: {$statusLabel}\n\n"

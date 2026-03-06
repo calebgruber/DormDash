@@ -8,7 +8,7 @@ $db   = getDB();
 
 // Redirect if already a courier
 if ($user['role'] === 'courier') {
-    header('Location: ' . APP_URL . '/courier/dashboard.php');
+    header('Location: ' . APP_URL . '/deliver/');
     exit;
 }
 
@@ -77,7 +77,7 @@ $csrf = generateCsrfToken();
             <div class="alert alert-success">
                 <strong>Application submitted!</strong> Our team will review your application and notify you by email.
             </div>
-            <a href="<?= APP_URL ?>/customer/dashboard.php" class="btn btn-primary">Back to Dashboard</a>
+            <a href="<?= APP_URL ?>/order/" class="btn btn-primary">Back to Dashboard</a>
         <?php elseif ($existingApp && $existingApp['status'] === 'rejected'): ?>
             <div class="alert alert-warning mb-4">
                 Your previous application was rejected. You may reapply below.

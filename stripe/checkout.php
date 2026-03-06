@@ -7,7 +7,7 @@ $user    = currentUser();
 $orderId = (int)($_GET['order_id'] ?? 0);
 
 if ($orderId <= 0) {
-    header('Location: ' . APP_URL . '/customer/dashboard.php');
+    header('Location: ' . APP_URL . '/order/');
     exit;
 }
 
@@ -22,13 +22,13 @@ $stmt->execute([$orderId, $user['id']]);
 $order = $stmt->fetch();
 
 if (!$order) {
-    header('Location: ' . APP_URL . '/customer/dashboard.php');
+    header('Location: ' . APP_URL . '/order/');
     exit;
 }
 
 if ($order['payment_status'] !== 'pending') {
     // Already paid or failed
-    header('Location: ' . APP_URL . '/customer/orders.php');
+    header('Location: ' . APP_URL . '/order/history.php');
     exit;
 }
 
@@ -77,8 +77,8 @@ $errorMsg = $session['error']['message'] ?? 'Could not create payment session.';
         <div class="alert alert-danger">
             <strong>Payment Error:</strong> <?= htmlspecialchars($errorMsg, ENT_QUOTES | ENT_HTML5) ?>
         </div>
-        <a href="<?= APP_URL ?>/customer/checkout.php" class="btn btn-primary">Try Again</a>
-        <a href="<?= APP_URL ?>/customer/dashboard.php" class="btn btn-outline-secondary ms-2">Go Home</a>
+        <a href="<?= APP_URL ?>/order/checkout.php" class="btn btn-primary">Try Again</a>
+        <a href="<?= APP_URL ?>/order/" class="btn btn-outline-secondary ms-2">Go Home</a>
     </div>
 </div>
 

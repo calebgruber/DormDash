@@ -43,7 +43,7 @@ $typeBadge = [
                         <?php if ($r['description']): ?>
                             <p class="card-text flex-grow-1"><?= htmlspecialchars($r['description'], ENT_QUOTES | ENT_HTML5) ?></p>
                         <?php endif; ?>
-                        <a href="<?= APP_URL ?>/customer/restaurant.php?id=<?= (int)$r['id'] ?>"
+                        <a href="<?= APP_URL ?>/order/restaurant.php?id=<?= (int)$r['id'] ?>"
                            class="btn btn-primary mt-3">Order Now</a>
                     </div>
                 </div>

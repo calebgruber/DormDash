@@ -12,7 +12,7 @@ $isDiningHall = isset($_SESSION['cart']) && !empty($_SESSION['cart']);
 $isPrepaid    = isset($_SESSION['prepaid_order']) && !empty($_SESSION['prepaid_order']);
 
 if (!$isDiningHall && !$isPrepaid) {
-    header('Location: ' . APP_URL . '/customer/dashboard.php');
+    header('Location: ' . APP_URL . '/order/');
     exit;
 }
 

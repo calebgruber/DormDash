@@ -18,8 +18,8 @@ $orderId = (int)($_GET['order_id'] ?? 0);
                 <p class="text-muted">Order #<?= (int)$orderId ?></p>
             <?php endif; ?>
             <div class="d-flex justify-content-center gap-3 mt-4 flex-wrap">
-                <a href="<?= APP_URL ?>/customer/orders.php" class="btn btn-primary">View My Orders</a>
-                <a href="<?= APP_URL ?>/customer/dashboard.php" class="btn btn-outline-secondary">Order More Food</a>
+                <a href="<?= APP_URL ?>/order/history.php" class="btn btn-primary">View My Orders</a>
+                <a href="<?= APP_URL ?>/order/" class="btn btn-outline-secondary">Order More Food</a>
             </div>
         </div>
     </div>

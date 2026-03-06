@@ -7,9 +7,9 @@ if (isLoggedIn()) {
     if ($u['role'] === 'admin') {
         header('Location: ' . APP_URL . '/admin/dashboard.php');
     } elseif ($u['role'] === 'courier' && $u['courier_approved']) {
-        header('Location: ' . APP_URL . '/courier/dashboard.php');
+        header('Location: ' . APP_URL . '/deliver/');
     } else {
-        header('Location: ' . APP_URL . '/customer/dashboard.php');
+        header('Location: ' . APP_URL . '/order/');
     }
     exit;
 }
@@ -46,9 +46,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     if ($user['role'] === 'admin') {
                         header('Location: ' . APP_URL . '/admin/dashboard.php');
                     } elseif ($user['role'] === 'courier' && $user['courier_approved']) {
-                        header('Location: ' . APP_URL . '/courier/dashboard.php');
+                        header('Location: ' . APP_URL . '/deliver/');
                     } else {
-                        header('Location: ' . APP_URL . '/customer/dashboard.php');
+                        header('Location: ' . APP_URL . '/order/');
                     }
                     exit;
                 }

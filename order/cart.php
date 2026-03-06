@@ -12,7 +12,7 @@ $csrf = generateCsrfToken();
 
 <?php if (empty($cart)): ?>
     <div class="alert alert-info">Your cart is empty.</div>
-    <a href="<?= APP_URL ?>/customer/dashboard.php" class="btn btn-primary">Browse Restaurants</a>
+    <a href="<?= APP_URL ?>/order/" class="btn btn-primary">Browse Restaurants</a>
 <?php else: ?>
     <div id="cart-message" class="alert d-none mb-3"></div>
 
@@ -70,8 +70,8 @@ $csrf = generateCsrfToken();
     </div>
 
     <div class="d-flex gap-3 flex-wrap">
-        <a href="<?= APP_URL ?>/customer/checkout.php" class="btn btn-success btn-lg">Proceed to Checkout →</a>
-        <a href="<?= APP_URL ?>/customer/dashboard.php" class="btn btn-outline-secondary">Continue Shopping</a>
+        <a href="<?= APP_URL ?>/order/checkout.php" class="btn btn-success btn-lg">Proceed to Checkout →</a>
+        <a href="<?= APP_URL ?>/order/" class="btn btn-outline-secondary">Continue Shopping</a>
     </div>
 
     <script>

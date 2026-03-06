@@ -7,7 +7,7 @@ $user = currentUser();
 
 // Allow couriers (approved) or admins
 if ($user['role'] !== 'admin' && !($user['role'] === 'courier' && $user['courier_approved'])) {
-    header('Location: ' . APP_URL . '/customer/dashboard.php');
+    header('Location: ' . APP_URL . '/order/');
     exit;
 }
 
@@ -99,7 +99,7 @@ $activeOrders = $activeStmt->fetchAll();
                         </div>
                         <p class="mb-1"><?= htmlspecialchars($order['restaurant_name'], ENT_QUOTES | ENT_HTML5) ?></p>
                         <p class="mb-2 text-muted small"><?= htmlspecialchars($order['delivery_address'] ?? '', ENT_QUOTES | ENT_HTML5) ?></p>
-                        <a href="<?= APP_URL ?>/courier/order.php?id=<?= (int)$order['id'] ?>" class="btn btn-outline-primary w-100">View Order</a>
+                        <a href="<?= APP_URL ?>/deliver/order.php?id=<?= (int)$order['id'] ?>" class="btn btn-outline-primary w-100">View Order</a>
                     </div>
                 </div>
             </div>

@@ -7,7 +7,7 @@ $user     = currentUser();
 $orderId  = (int)($_GET['id'] ?? 0);
 
 if ($orderId <= 0) {
-    header('Location: ' . APP_URL . '/courier/dashboard.php');
+    header('Location: ' . APP_URL . '/deliver/');
     exit;
 }
 
@@ -22,7 +22,7 @@ $stmt->execute([$orderId]);
 $order = $stmt->fetch();
 
 if (!$order) {
-    header('Location: ' . APP_URL . '/courier/dashboard.php');
+    header('Location: ' . APP_URL . '/deliver/');
     exit;
 }
 
@@ -32,7 +32,7 @@ $isCourier = $user['role'] === 'courier' && (int)$order['courier_id'] === $user[
 $isOpen    = $order['status'] === 'open';
 
 if (!$isAdmin && !$isCourier && !$isOpen) {
-    header('Location: ' . APP_URL . '/courier/dashboard.php');
+    header('Location: ' . APP_URL . '/deliver/');
     exit;
 }
 
@@ -63,7 +63,7 @@ $csrf = generateCsrfToken();
 
 <nav aria-label="breadcrumb" class="mb-3">
     <ol class="breadcrumb">
-        <li class="breadcrumb-item"><a href="<?= APP_URL ?>/courier/dashboard.php">Courier Dashboard</a></li>
+        <li class="breadcrumb-item"><a href="<?= APP_URL ?>/deliver/">Courier Dashboard</a></li>
         <li class="breadcrumb-item active">Order #<?= (int)$orderId ?></li>
     </ol>
 </nav>
