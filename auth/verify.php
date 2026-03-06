@@ -39,7 +39,7 @@ if (empty($token)) {
             <div class="alert alert-danger">
                 <strong>Verification Failed:</strong> <?= htmlspecialchars($message, ENT_QUOTES | ENT_HTML5) ?>
             </div>
-            <a href="<?= APP_URL ?>/auth/login.php" class="btn btn-primary">Go to Login</a>
+            <a href="<?= APP_URL ?>/auth/login" class="btn btn-primary">Go to Login</a>
         <?php endif; ?>
     </div>
 </div>

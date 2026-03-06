@@ -98,7 +98,7 @@ $csrf = generateCsrfToken();
                 </form>
 
                 <p class="text-center mt-3 mb-0">
-                    No account? <a href="<?= APP_URL ?>/auth/register.php">Register</a>
+                    No account? <a href="<?= APP_URL ?>/auth/register">Register</a>
                 </p>
             </div>
         </div>

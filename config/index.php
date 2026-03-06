@@ -238,7 +238,7 @@ $activeTab = $_GET['tab'] ?? 'appearance';
             <div class="page-subtitle">Configure appearance, database, Stripe keys, and run migrations</div>
         </div>
         <div class="col-auto">
-            <a href="<?= APP_URL ?>/admin/dashboard.php" class="btn btn-outline-secondary btn-sm">
+            <a href="<?= APP_URL ?>/admin/dashboard" class="btn btn-outline-secondary btn-sm">
                 ← Admin Dashboard
             </a>
         </div>
@@ -365,7 +365,7 @@ $activeTab = $_GET['tab'] ?? 'appearance';
 
             <h3 class="card-title mb-1">Payment Config</h3>
             <p class="text-muted mb-3">Manage delivery fee, service fee, and tip suggestions.</p>
-            <a href="<?= APP_URL ?>/admin/config.php" class="btn btn-outline-secondary">
+            <a href="<?= APP_URL ?>/admin/config" class="btn btn-outline-secondary">
                 Open Payment Config →
             </a>
         </div>

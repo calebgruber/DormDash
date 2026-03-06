@@ -69,7 +69,7 @@ $csrf = generateCsrfToken();
 
 <div class="row justify-content-center">
     <div class="col-md-7 col-lg-6">
-        <h2 class="mb-4">🚴 Become a Courier</h2>
+        <h2 class="mb-4"><i class="ti ti-bike me-2 text-primary"></i>Become a Courier</h2>
 
         <?php if ($success || ($existingApp && $existingApp['status'] === 'pending')): ?>
             <div class="alert alert-success">

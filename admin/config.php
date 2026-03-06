@@ -57,8 +57,8 @@ $csrf = generateCsrfToken();
 <?php require_once __DIR__ . '/../includes/header.php'; ?>
 
 <div class="d-flex justify-content-between align-items-center mb-4">
-    <h2>⚙️ Payment Configuration</h2>
-    <a href="<?= APP_URL ?>/admin/dashboard.php" class="btn btn-outline-secondary btn-sm">← Dashboard</a>
+    <h2><i class="ti ti-credit-card me-2 text-primary"></i>Payment Configuration</h2>
+    <a href="<?= APP_URL ?>/admin/dashboard" class="btn btn-outline-secondary btn-sm">← Dashboard</a>
 </div>
 
 <?php foreach ($errors as $e): ?><div class="alert alert-danger"><?= htmlspecialchars($e, ENT_QUOTES | ENT_HTML5) ?></div><?php endforeach; ?>

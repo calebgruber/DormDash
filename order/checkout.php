@@ -213,7 +213,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     exit;
 
                 } catch (Throwable $e) {
-                    $db->rollBack();
+                    // Transaction already committed; just report the Stripe error.
+                    // The order row exists but has no Stripe session — admin can handle manually.
+                    logAppError('Stripe session creation failed for order ' . ($orderId ?? 0) . ': ' . $e->getMessage(), 'error');
                     $errors[] = 'Payment setup failed: ' . $e->getMessage();
                 }
             } catch (PDOException $e) {

@@ -39,7 +39,7 @@ $activeOrders = $activeStmt->fetchAll();
 ?>
 <?php require_once __DIR__ . '/../includes/header.php'; ?>
 
-<h2 class="mb-4">🚴 Courier Dashboard</h2>
+<h2 class="mb-4"><i class="ti ti-bike me-2 text-primary"></i>Courier Dashboard</h2>
 
 <div id="event-message" class="alert d-none mb-3"></div>
 
@@ -99,7 +99,7 @@ $activeOrders = $activeStmt->fetchAll();
                         </div>
                         <p class="mb-1"><?= htmlspecialchars($order['restaurant_name'], ENT_QUOTES | ENT_HTML5) ?></p>
                         <p class="mb-2 text-muted small"><?= htmlspecialchars($order['delivery_address'] ?? '', ENT_QUOTES | ENT_HTML5) ?></p>
-                        <a href="<?= APP_URL ?>/deliver/order.php?id=<?= (int)$order['id'] ?>" class="btn btn-outline-primary w-100">View Order</a>
+                        <a href="<?= APP_URL ?>/deliver/order?id=<?= (int)$order['id'] ?>" class="btn btn-outline-primary w-100">View Order</a>
                     </div>
                 </div>
             </div>

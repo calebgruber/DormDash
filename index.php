@@ -96,7 +96,7 @@ if ($user) {
             <div class="col-6 col-md-3">
                 <div class="mb-2"><i class="ti ti-circle-number-2 fs-1 text-primary"></i></div>
                 <p class="fw-semibold mb-0">Build Your Cart</p>
-                <p class="text-muted small">Add items, customise them, choose a tip</p>
+                <p class="text-muted small">Add items, customize them, choose a tip</p>
             </div>
             <div class="col-6 col-md-3">
                 <div class="mb-2"><i class="ti ti-circle-number-3 fs-1 text-primary"></i></div>

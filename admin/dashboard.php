@@ -13,7 +13,7 @@ $revenue = $db->query("SELECT COALESCE(SUM(food_total + delivery_fee + service_f
 ?>
 <?php require_once __DIR__ . '/../includes/header.php'; ?>
 
-<h2 class="mb-4">⚙️ Admin Dashboard</h2>
+<h2 class="mb-4"><i class="ti ti-settings me-2 text-primary"></i>Admin Dashboard</h2>
 
 <!-- Stats Cards -->
 <div class="row g-4 mb-5">
@@ -80,7 +80,7 @@ $revenue = $db->query("SELECT COALESCE(SUM(food_total + delivery_fee + service_f
         <a href="<?= APP_URL ?>/config/" class="text-decoration-none">
             <div class="card shadow-sm border-0 h-100">
                 <div class="card-body">
-                    <div class="fs-2 mb-2">⚙️</div>
+                    
                     <h5 class="card-title">App Settings</h5>
                     <p class="card-text text-muted">Theme, database config, Stripe keys, and migrations</p>
                 </div>

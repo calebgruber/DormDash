@@ -18,7 +18,7 @@ $orders = $stmt->fetchAll();
 ?>
 <?php require_once __DIR__ . '/../includes/header.php'; ?>
 
-<h2 class="mb-4">📦 My Orders</h2>
+<h2 class="mb-4"><i class="ti ti-package me-2 text-primary"></i>My Orders</h2>
 
 <?php if (empty($orders)): ?>
     <div class="alert alert-info">You haven't placed any orders yet.</div>

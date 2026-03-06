@@ -140,21 +140,21 @@ $csrf = generateCsrfToken();
                         <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrf) ?>">
                         <input type="hidden" name="order_id" value="<?= (int)$orderId ?>">
                         <input type="hidden" name="event_type" value="card_collected">
-                        <button type="submit" class="btn btn-primary w-100">✅ I Have the MOR Card</button>
+                        <button type="submit" class="btn btn-primary w-100"><i class="ti ti-check me-1"></i>I Have the MORE Card</button>
                     </form>
                 <?php elseif ($order['status'] === 'accepted' && $order['order_type'] === 'prepaid_pickup'): ?>
                     <form class="event-form mb-2">
                         <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrf) ?>">
                         <input type="hidden" name="order_id" value="<?= (int)$orderId ?>">
                         <input type="hidden" name="event_type" value="food_collected">
-                        <button type="submit" class="btn btn-primary w-100">🍱 Food Collected</button>
+                        <button type="submit" class="btn btn-primary w-100"><i class="ti ti-basket me-1"></i>Food Collected</button>
                     </form>
                 <?php elseif ($order['status'] === 'card_collected'): ?>
                     <form class="event-form mb-2">
                         <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrf) ?>">
                         <input type="hidden" name="order_id" value="<?= (int)$orderId ?>">
                         <input type="hidden" name="event_type" value="food_collected">
-                        <button type="submit" class="btn btn-primary w-100">🍱 Food Collected</button>
+                        <button type="submit" class="btn btn-primary w-100"><i class="ti ti-basket me-1"></i>Food Collected</button>
                     </form>
                 <?php elseif ($order['status'] === 'food_collected'): ?>
                     <form class="event-form" enctype="multipart/form-data">
@@ -165,7 +165,7 @@ $csrf = generateCsrfToken();
                             <label class="form-label">Delivery Photo <span class="text-muted">(optional)</span></label>
                             <input type="file" class="form-control" name="photo" accept="image/*">
                         </div>
-                        <button type="submit" class="btn btn-success w-100">🎉 Mark as Delivered</button>
+                        <button type="submit" class="btn btn-success w-100"><i class="ti ti-check-circle me-1"></i>Mark as Delivered</button>
                     </form>
                 <?php else: ?>
                     <p class="text-muted mb-0">No actions available for current status.</p>
