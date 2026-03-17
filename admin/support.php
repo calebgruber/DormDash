@@ -239,7 +239,7 @@ $threads = $db->query(
             var isMe = (m.is_from_admin == 1);
             var div  = document.createElement('div');
             div.className = 'mb-3 d-flex ' + (isMe ? 'justify-content-end' : 'justify-content-start');
-            var ts = new Date(m.created_at.replace(' ','T') + 'Z').toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'});
+            var ts = new Date(m.created_at.replace(' ','T')).toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'});
             div.innerHTML =
                 '<div style="max-width:75%">'
                 + '<div class="rounded-3 px-3 py-2 ' + (isMe ? 'bg-primary text-white' : 'chat-bubble-received') + '">'
