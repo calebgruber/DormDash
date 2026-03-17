@@ -1,6 +1,10 @@
 # Local configuration overrides (contains credentials — never commit)
 config/local.php
 
+# Composer dependencies
+vendor/
+composer.lock
+
 # Upload artifacts
 uploads/*
 !uploads/.gitkeep

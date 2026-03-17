@@ -28,6 +28,9 @@ $foodTotal      = 0.0;
 $customDesc     = null;
 $cart           = [];
 $prepaid        = [];
+$isBoostOrder   = false;
+$boostPayMethod = null;
+$stripeClientSecret = null;
 
 if ($isTextOrder && !$isDiningHall) {
     $tOrder       = $_SESSION['text_order'];
@@ -42,14 +45,22 @@ if ($isTextOrder && !$isDiningHall) {
     $firstItem    = reset($cart);
     $restaurantId = (int)$firstItem['restaurant_id'];
 } else {
-    $prepaid      = $_SESSION['prepaid_order'];
-    $restaurantId = (int)$prepaid['restaurant_id'];
-    $foodTotal    = (float)$prepaid['estimated_food_total'];
-    $orderType    = 'prepaid_pickup';
+    $prepaid          = $_SESSION['prepaid_order'];
+    $restaurantId     = (int)$prepaid['restaurant_id'];
+    $boostPayMethod   = $prepaid['boost_payment_method'] ?? null;  // 'in_person' | 'boost_app' | null
+    $isBoostOrder     = !empty($boostPayMethod);
+    // If boost_app the food is already paid via the Boost app; only charge fees + tip
+    $foodTotal        = ($isBoostOrder && $boostPayMethod === 'boost_app')
+                            ? 0.0
+                            : (float)($prepaid['estimated_food_total'] ?? 0);
+    $orderType        = $isBoostOrder ? 'boost_order' : 'prepaid_pickup';
+    $customDesc       = $prepaid['boost_description'] ?? null;
 }
 
 $fees              = calculateFees($foodTotal, $config);
 $isDiningHallOrder = in_array($orderType, ['dining_hall', 'dining_hall_text'], true);
+// For boost_app the food is already paid; don't charge it again via Stripe
+$chargeFood        = !$isDiningHallOrder && !($isBoostOrder && $boostPayMethod === 'boost_app');
 
 // Saved locations
 $savedLocations = [];
@@ -98,14 +109,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $stmt = $db->prepare(
                     'INSERT INTO orders
                      (customer_id, restaurant_id, order_type, food_total, delivery_fee, service_fee, tip_amount,
-                      mor_payment_type, boost_order_number, customer_name, delivery_address, customer_notes,
-                      custom_description, payment_status)
-                     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, "pending")'
+                      mor_payment_type, boost_order_number, boost_payment_method, customer_name,
+                      delivery_address, customer_notes, custom_description, status, payment_status)
+                     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, "pending", "pending")'
                 );
                 $stmt->execute([
                     $user['id'], $restaurantId, $orderType,
                     $foodTotal, $fees['delivery_fee'], $fees['service_fee'], $tipAmount,
-                    $morPaymentType ?: null, $boostNum, $customerName,
+                    $morPaymentType ?: null,
+                    $boostNum,
+                    $boostPayMethod ?: null,
+                    $customerName,
                     $deliveryAddress, $customerNotes ?: null,
                     $customDesc,
                 ]);
@@ -135,53 +149,37 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
                 $db->commit();
 
-                // Try Stripe checkout
+                // ── Stripe Embedded Checkout ─────────────────────────────────
                 try {
-                    require_once __DIR__ . '/../includes/stripe_api.php';
                     require_once __DIR__ . '/../config/stripe.php';
                     \Stripe\Stripe::setApiKey(STRIPE_SECRET_KEY);
 
-                    $chargeAmount = $fees['delivery_fee'] + $fees['service_fee'] + $tipAmount;
-                    if (!$isDiningHallOrder) $chargeAmount += $foodTotal;
-
                     $lineItems = [];
-                    if (!$isDiningHallOrder && $foodTotal > 0) {
+                    if ($chargeFood && $foodTotal > 0) {
                         $lineItems[] = [
-                            'price_data' => [
-                                'currency'     => 'usd',
-                                'unit_amount'  => (int)round($foodTotal * 100),
-                                'product_data' => ['name' => 'Food Items'],
-                            ],
+                            'price_data' => ['currency' => 'usd', 'unit_amount' => (int)round($foodTotal * 100),
+                                             'product_data' => ['name' => 'Food Items']],
                             'quantity' => 1,
                         ];
                     }
                     if ($fees['delivery_fee'] > 0) {
                         $lineItems[] = [
-                            'price_data' => [
-                                'currency'     => 'usd',
-                                'unit_amount'  => (int)round($fees['delivery_fee'] * 100),
-                                'product_data' => ['name' => 'Delivery Fee'],
-                            ],
+                            'price_data' => ['currency' => 'usd', 'unit_amount' => (int)round($fees['delivery_fee'] * 100),
+                                             'product_data' => ['name' => 'Delivery Fee']],
                             'quantity' => 1,
                         ];
                     }
                     if ($fees['service_fee'] > 0) {
                         $lineItems[] = [
-                            'price_data' => [
-                                'currency'     => 'usd',
-                                'unit_amount'  => (int)round($fees['service_fee'] * 100),
-                                'product_data' => ['name' => 'Service Fee'],
-                            ],
+                            'price_data' => ['currency' => 'usd', 'unit_amount' => (int)round($fees['service_fee'] * 100),
+                                             'product_data' => ['name' => 'Service Fee']],
                             'quantity' => 1,
                         ];
                     }
                     if ($tipAmount > 0) {
                         $lineItems[] = [
-                            'price_data' => [
-                                'currency'     => 'usd',
-                                'unit_amount'  => (int)round($tipAmount * 100),
-                                'product_data' => ['name' => 'Tip for Courier'],
-                            ],
+                            'price_data' => ['currency' => 'usd', 'unit_amount' => (int)round($tipAmount * 100),
+                                             'product_data' => ['name' => 'Tip for Courier']],
                             'quantity' => 1,
                         ];
                     }
@@ -191,30 +189,31 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             'payment_method_types' => ['card'],
                             'line_items'           => $lineItems,
                             'mode'                 => 'payment',
-                            'success_url'          => APP_URL . '/stripe/success?order_id=' . $orderId,
-                            'cancel_url'           => APP_URL . '/stripe/cancel',
+                            'ui_mode'              => 'embedded',
+                            'return_url'           => APP_URL . '/stripe/return?order_id=' . $orderId . '&session_id={CHECKOUT_SESSION_ID}',
+                            'customer_email'       => $user['email'],
                             'metadata'             => ['order_id' => $orderId],
                         ]);
                         $db->prepare(
                             'UPDATE orders SET stripe_checkout_session_id = ? WHERE id = ?'
                         )->execute([$session->id, $orderId]);
-                        // Clear session cart
                         unset($_SESSION['cart'], $_SESSION['prepaid_order'], $_SESSION['text_order']);
-                        header('Location: ' . $session->url);
+                        $stripeClientSecret = $session->client_secret;
+                        // Page continues to render with embedded checkout
+                    } else {
+                        // No payment needed (e.g. $0 order)
+                        $db->prepare(
+                            'UPDATE orders SET payment_status = "paid", status = "open", updated_at = NOW() WHERE id = ?'
+                        )->execute([$orderId]);
+                        $db->prepare('INSERT INTO order_events (order_id, type) VALUES (?, "placed")')->execute([$orderId]);
+                        unset($_SESSION['cart'], $_SESSION['prepaid_order'], $_SESSION['text_order']);
+                        sendOrderConfirmation(['id' => $orderId, 'food_total' => $foodTotal,
+                            'delivery_fee' => $fees['delivery_fee'], 'service_fee' => $fees['service_fee'],
+                            'tip_amount' => $tipAmount, 'delivery_address' => $deliveryAddress], $user);
+                        header('Location: ' . APP_URL . '/stripe/success?order_id=' . $orderId);
                         exit;
                     }
-
-                    // No payment needed (0 total)
-                    $db->prepare('UPDATE orders SET payment_status = "paid" WHERE id = ?')->execute([$orderId]);
-                    $db->prepare('INSERT INTO order_events (order_id, type) VALUES (?, "placed")')->execute([$orderId]);
-                    unset($_SESSION['cart'], $_SESSION['prepaid_order'], $_SESSION['text_order']);
-                    sendOrderConfirmation(['id' => $orderId, 'food_total' => $foodTotal, 'delivery_fee' => $fees['delivery_fee'], 'service_fee' => $fees['service_fee'], 'tip_amount' => $tipAmount, 'delivery_address' => $deliveryAddress], $user);
-                    header('Location: ' . APP_URL . '/stripe/success?order_id=' . $orderId);
-                    exit;
-
                 } catch (Throwable $e) {
-                    // Transaction already committed; just report the Stripe error.
-                    // The order row exists but has no Stripe session — admin can handle manually.
                     logAppError('Stripe session creation failed for order ' . ($orderId ?? 0) . ': ' . $e->getMessage(), 'error');
                     $errors[] = 'Payment setup failed: ' . $e->getMessage();
                 }
@@ -230,6 +229,30 @@ $csrf = generateCsrfToken();
 ?>
 <?php require_once __DIR__ . '/../includes/header.php'; ?>
 
+<?php if ($stripeClientSecret): ?>
+<!-- ── Stripe Embedded Checkout ─────────────────────────────────────── -->
+<div class="row justify-content-center">
+    <div class="col-12 col-lg-9">
+        <h2 class="fw-bold mb-4"><i class="ti ti-lock me-2 text-primary"></i>Secure Payment</h2>
+        <div class="card shadow-sm border-0">
+            <div class="card-body p-0">
+                <div id="stripe-checkout"></div>
+            </div>
+        </div>
+    </div>
+</div>
+<script src="https://js.stripe.com/v3/"></script>
+<script>
+(async () => {
+    const stripe = Stripe(<?= json_encode(STRIPE_PUBLIC_KEY) ?>);
+    const checkout = await stripe.initEmbeddedCheckout({
+        clientSecret: <?= json_encode($stripeClientSecret) ?>
+    });
+    checkout.mount('#stripe-checkout');
+})();
+</script>
+<?php else: ?>
+
 <div class="row justify-content-center">
     <div class="col-md-8 col-lg-7">
         <h2 class="fw-bold mb-4"><i class="ti ti-credit-card me-2 text-primary"></i>Checkout</h2>
@@ -243,6 +266,26 @@ $csrf = generateCsrfToken();
         <?php if ($isTextOrder && !$isDiningHall && $customDesc): ?>
             <div class="alert alert-info mb-4">
                 <strong><i class="ti ti-pencil me-1"></i>Text Order:</strong> <?= htmlspecialchars($customDesc, ENT_QUOTES | ENT_HTML5) ?>
+            </div>
+        <?php endif; ?>
+
+        <?php if ($isBoostOrder): ?>
+            <div class="alert alert-info mb-4">
+                <strong><i class="ti ti-shopping-cart me-1"></i>Boost Order</strong>
+                <?php if ($boostPayMethod === 'boost_app'): ?>
+                    — Your food is already paid via the Boost app. You are only charged fees &amp; tip here.
+                <?php else: ?>
+                    — Your courier will place this order in person and pay for it.
+                <?php endif; ?>
+                <?php if ($customDesc): ?>
+                    <div class="mt-1 small"><strong>Order:</strong> <?= htmlspecialchars($customDesc, ENT_QUOTES | ENT_HTML5) ?></div>
+                <?php endif; ?>
+                <?php if (!empty($prepaid['boost_order_number'])): ?>
+                    <div class="mt-1 small"><strong>Boost Order #:</strong> <?= htmlspecialchars($prepaid['boost_order_number'], ENT_QUOTES | ENT_HTML5) ?></div>
+                <?php endif; ?>
+                <?php if (!empty($prepaid['customer_name']) && $boostPayMethod === 'boost_app'): ?>
+                    <div class="mt-1 small"><strong>Name on order:</strong> <?= htmlspecialchars($prepaid['customer_name'], ENT_QUOTES | ENT_HTML5) ?></div>
+                <?php endif; ?>
             </div>
         <?php endif; ?>
 
@@ -434,5 +477,7 @@ document.getElementById('save_location')?.addEventListener('change', function() 
     document.getElementById('loc-label-wrap').classList.toggle('d-none', !this.checked);
 });
 </script>
+
+<?php endif; // end stripe/form conditional ?>
 
 <?php require_once __DIR__ . '/../includes/footer.php'; ?>

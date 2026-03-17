@@ -89,6 +89,45 @@ if ($currentUser && $currentUser['role'] === 'admin') {
         .card-img-top.banner-thumb { height: 160px; object-fit: cover; }
         .hover-lift { transition: transform .15s ease, box-shadow .15s ease; }
         .hover-lift:hover { transform: translateY(-3px); box-shadow: 0 .5rem 1.5rem rgba(0,0,0,.12) !important; }
+
+        /* ── Dark-mode table header fix ──────────────────────────────── */
+        [data-bs-theme="dark"] .table > thead > tr > th,
+        [data-bs-theme="dark"] .table > thead > tr > td {
+            color: var(--tblr-body-color) !important;
+            background-color: rgba(255,255,255,.06) !important;
+            border-color: rgba(255,255,255,.1) !important;
+        }
+        [data-bs-theme="dark"] .table > tbody > tr > td,
+        [data-bs-theme="dark"] .table > tbody > tr > th {
+            color: var(--tblr-body-color) !important;
+            border-color: rgba(255,255,255,.07) !important;
+        }
+        [data-bs-theme="dark"] .card-header.bg-white,
+        [data-bs-theme="dark"] .card-header.bg-white.fw-bold { background-color: var(--tblr-bg-surface) !important; color: var(--tblr-body-color) !important; }
+
+        /* ── Soft / ghost badges (semi-transparent bg, full-colour text) */
+        .badge.bg-danger    { background-color: rgba(214,57,57,.15)    !important; color: #d63939 !important; }
+        .badge.bg-success   { background-color: rgba(47,179,68,.15)    !important; color: #2fb344 !important; }
+        .badge.bg-warning   { background-color: rgba(248,174,0,.18)    !important; color: #a07800 !important; }
+        .badge.bg-info      { background-color: rgba(74,181,226,.15)   !important; color: #1a7ead !important; }
+        .badge.bg-secondary { background-color: rgba(134,142,150,.18)  !important; color: #68737d !important; }
+        .badge.bg-purple    { background-color: var(--dd-purple-light, rgba(139,92,246,.15)) !important; color: var(--dd-purple, #6839c6) !important; }
+        .badge.bg-primary   { background-color: var(--dd-purple-light, rgba(139,92,246,.15)) !important; color: var(--dd-purple, #6839c6) !important; }
+        [data-bs-theme="dark"] .badge.bg-warning   { color: #f8ae00 !important; }
+        [data-bs-theme="dark"] .badge.bg-secondary { color: #9ba5af !important; }
+        [data-bs-theme="dark"] .badge.bg-danger     { color: #e85656 !important; }
+        [data-bs-theme="dark"] .badge.bg-info       { color: #4ab5e3 !important; }
+
+        /* ── Chat bubbles ─────────────────────────────────────────────── */
+        .chat-bubble-received {
+            background-color: var(--tblr-bg-surface-secondary, #e9ecef);
+            color: var(--tblr-body-color);
+            border: 1px solid var(--tblr-border-color, #dee2e6);
+        }
+        .chat-typing-dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: currentColor; animation: typingPulse 1.2s infinite; }
+        .chat-typing-dot:nth-child(2) { animation-delay: .2s; }
+        .chat-typing-dot:nth-child(3) { animation-delay: .4s; }
+        @keyframes typingPulse { 0%,80%,100%{ opacity:.25; transform:scale(.85); } 40%{ opacity:1; transform:scale(1); } }
     </style>
 </head>
 <body class="antialiased">
@@ -191,37 +230,3 @@ if ($currentUser && $currentUser['role'] === 'admin') {
         <div class="page-body">
             <div class="container-xl">
 
-
-// Compute cart count for badge
-$cartCount = 0;
-if (isset($_SESSION['cart']) && is_array($_SESSION['cart'])) {
-    $cartCount = getCartItemCount($_SESSION['cart']);
-}
-
-// Check if user has a courier application
-$hasCourierApp = false;
-if ($currentUser && $currentUser['role'] === 'customer') {
-    try {
-        $db = getDB();
-        $stmt = $db->prepare('SELECT id FROM courier_applications WHERE user_id = ? LIMIT 1');
-        $stmt->execute([$currentUser['id']]);
-        $hasCourierApp = (bool)$stmt->fetch();
-    } catch (Throwable $e) {
-        $hasCourierApp = false;
-    }
-}
-
-$theme = getAppTheme();
-?>
-<!doctype html>
-<html lang="en" data-bs-theme="<?= $theme ?>">
-<head>
-    <meta charset="utf-8"/>
-    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"/>
-    <title><?= APP_NAME ?></title>
-    <link rel="preconnect" href="https://cdn.jsdelivr.net">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/core@1.0.0-beta20/dist/css/tabler.min.css">
-    <style>
-        .navbar-brand-text { font-weight: 800; font-size: 1.2rem; letter-spacing: -0.02em; }
-    </style>
-</head>

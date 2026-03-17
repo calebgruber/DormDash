@@ -45,7 +45,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET' || $action === 'get') {
     $mStmt->execute([$orderId]);
     $messages = $mStmt->fetchAll();
 
-    // Mark messages as read (admin reads customer messages; customer reads admin messages)
+    // Mark messages as read
     if ($isAdmin) {
         $db->prepare(
             'UPDATE support_messages SET read_at = NOW()
@@ -58,7 +58,33 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET' || $action === 'get') {
         )->execute([$orderId]);
     }
 
-    echo json_encode(['success' => true, 'messages' => $messages]);
+    // Check if the OTHER party is currently typing (typed within last 5 seconds)
+    $otherIsAdmin  = $isAdmin ? 0 : 1;
+    $typingStmt = $db->prepare(
+        'SELECT typed_at FROM support_typing
+         WHERE order_id = ? AND is_admin = ?
+           AND typed_at >= DATE_SUB(NOW(), INTERVAL 5 SECOND)'
+    );
+    $typingStmt->execute([$orderId, $otherIsAdmin]);
+    $otherTyping = (bool)$typingStmt->fetch();
+
+    echo json_encode(['success' => true, 'messages' => $messages, 'other_typing' => $otherTyping]);
+    exit;
+}
+
+// ── POST: typing indicator ────────────────────────────────────────────────
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && $action === 'typing') {
+    // No CSRF needed — low-stakes indicator; verified by session auth above
+    try {
+        $db->prepare(
+            'INSERT INTO support_typing (order_id, is_admin, typed_at)
+             VALUES (?, ?, NOW())
+             ON DUPLICATE KEY UPDATE typed_at = NOW()'
+        )->execute([$orderId, $isAdmin ? 1 : 0]);
+    } catch (Throwable $e) {
+        // Table might not exist yet — ignore silently
+    }
+    echo json_encode(['success' => true]);
     exit;
 }
 
@@ -84,6 +110,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $action === 'send') {
          VALUES (?, ?, ?, ?)'
     )->execute([$orderId, $user['id'], $message, $isAdmin ? 1 : 0]);
 
+    // Clear typing indicator
+    try {
+        $db->prepare('DELETE FROM support_typing WHERE order_id = ? AND is_admin = ?')
+           ->execute([$orderId, $isAdmin ? 1 : 0]);
+    } catch (Throwable $e) {}
+
     $newId = (int)$db->lastInsertId();
 
     echo json_encode([
@@ -100,3 +132,4 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $action === 'send') {
 }
 
 echo json_encode(['success' => false, 'error' => 'Unknown action']);
+

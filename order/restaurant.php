@@ -47,28 +47,41 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['order_mode'] ?? '') === 't
     }
 }
 
-// Handle prepaid form
+// Handle boost/prepaid form
 $prepaidErrors  = [];
 $prepaidSuccess = false;
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['order_mode'] ?? '') === 'prepaid') {
     if (!verifyCsrfToken($_POST['csrf_token'] ?? '')) {
         $prepaidErrors[] = 'Invalid CSRF token.';
     } else {
-        $customerName    = trim($_POST['customer_name']          ?? '');
-        $boostOrderNum   = trim($_POST['boost_order_number']     ?? '');
-        $estimatedTotal  = (float)($_POST['estimated_food_total'] ?? 0);
+        $boostDescription   = trim($_POST['boost_description']      ?? '');
+        $boostPayMethod     = trim($_POST['boost_payment_method']    ?? '');
+        $boostOrderNum      = trim($_POST['boost_order_number']      ?? '');
+        $customerName       = trim($_POST['customer_name']           ?? '');
+        $estimatedTotal     = (float)($_POST['estimated_food_total'] ?? 0);
 
-        if (empty($customerName))    $prepaidErrors[] = 'Customer name is required.';
-        if ($estimatedTotal <= 0)    $prepaidErrors[] = 'Please enter a valid estimated total.';
+        if (empty($boostDescription))  $prepaidErrors[] = 'Please describe what you ordered.';
+        if (empty($boostPayMethod) || !in_array($boostPayMethod, ['in_person','boost_app'], true)) {
+            $prepaidErrors[] = 'Please select how the order is being paid.';
+        }
+        if ($boostPayMethod === 'boost_app') {
+            if (empty($boostOrderNum))  $prepaidErrors[] = 'Boost order number is required when paying via the Boost app.';
+            if (empty($customerName))   $prepaidErrors[] = 'Name on the Boost order is required.';
+        }
+        if ($boostPayMethod === 'in_person' && $estimatedTotal <= 0) {
+            $prepaidErrors[] = 'Please enter a valid estimated food total.';
+        }
 
         if (empty($prepaidErrors)) {
             $_SESSION['prepaid_order'] = [
                 'restaurant_id'        => $restaurantId,
                 'restaurant_name'      => $restaurant['name'],
-                'customer_name'        => $customerName,
-                'boost_order_number'   => $boostOrderNum,
-                'estimated_food_total' => $estimatedTotal,
-                'order_type'           => 'prepaid_pickup',
+                'boost_description'    => $boostDescription,
+                'boost_payment_method' => $boostPayMethod,
+                'boost_order_number'   => $boostOrderNum ?: null,
+                'customer_name'        => $customerName ?: null,
+                'estimated_food_total' => ($boostPayMethod === 'boost_app') ? 0.0 : $estimatedTotal,
+                'order_type'           => 'boost_order',
             ];
             header('Location: ' . APP_URL . '/order/checkout');
             exit;
@@ -330,41 +343,89 @@ $cartCount = isset($_SESSION['cart']) ? getCartItemCount($_SESSION['cart']) : 0;
     <?php endif; ?>
 
 <?php else: ?>
-    <!-- Prepaid pickup form (non-dining-hall) -->
+    <!-- Boost order form (non-dining-hall) -->
     <?php foreach ($prepaidErrors as $e): ?>
         <div class="alert alert-danger py-2"><?= htmlspecialchars($e, ENT_QUOTES | ENT_HTML5) ?></div>
     <?php endforeach; ?>
 
     <div class="card shadow-sm border-0">
         <div class="card-body">
-            <h4 class="card-title mb-1 fw-bold">Place Prepaid Pickup Order</h4>
-            <p class="text-muted mb-4">Order from <strong><?= htmlspecialchars($restaurant['name'], ENT_QUOTES | ENT_HTML5) ?></strong> using the app or in-store first, then submit for courier pickup.</p>
+            <h4 class="card-title mb-1 fw-bold"><i class="ti ti-bolt me-2 text-primary"></i>Place Boost Order</h4>
+            <p class="text-muted mb-4">Send a Boost order from <strong><?= htmlspecialchars($restaurant['name'], ENT_QUOTES | ENT_HTML5) ?></strong> via a courier.</p>
 
-            <form method="POST" action="">
+            <form method="POST" action="" id="boost-form">
                 <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrf) ?>">
                 <input type="hidden" name="order_mode" value="prepaid">
+
+                <!-- What did you order? -->
                 <div class="mb-3">
-                    <label class="form-label fw-semibold">Your Name (on order)</label>
-                    <input type="text" class="form-control" name="customer_name"
-                           value="<?= htmlspecialchars($_POST['customer_name'] ?? currentUser()['name'] ?? '', ENT_QUOTES | ENT_HTML5) ?>" required>
+                    <label class="form-label fw-semibold">What did you order? <span class="text-danger">*</span></label>
+                    <textarea class="form-control" name="boost_description" rows="3"
+                              placeholder="e.g. Large Pepperoni Pizza, 2x Garlic Bread, Large Lemonade" required><?= htmlspecialchars($_POST['boost_description'] ?? '', ENT_QUOTES | ENT_HTML5) ?></textarea>
                 </div>
+
+                <!-- How is it being paid? -->
                 <div class="mb-3">
-                    <label class="form-label fw-semibold">Boost / Order Number <span class="text-muted fw-normal">(optional)</span></label>
-                    <input type="text" class="form-control" name="boost_order_number"
-                           value="<?= htmlspecialchars($_POST['boost_order_number'] ?? '', ENT_QUOTES | ENT_HTML5) ?>">
+                    <label class="form-label fw-semibold">How is the food being paid for? <span class="text-danger">*</span></label>
+                    <div class="form-check">
+                        <input class="form-check-input boost-pay-radio" type="radio" name="boost_payment_method"
+                               id="pay_boost_app" value="boost_app"
+                               <?= (($_POST['boost_payment_method'] ?? '') === 'boost_app') ? 'checked' : '' ?>>
+                        <label class="form-check-label" for="pay_boost_app">
+                            <strong>Boost App</strong> — I already paid through the Boost app
+                        </label>
+                    </div>
+                    <div class="form-check mt-1">
+                        <input class="form-check-input boost-pay-radio" type="radio" name="boost_payment_method"
+                               id="pay_in_person" value="in_person"
+                               <?= (($_POST['boost_payment_method'] ?? '') === 'in_person') ? 'checked' : '' ?>>
+                        <label class="form-check-label" for="pay_in_person">
+                            <strong>In Person</strong> — Courier will place &amp; pay for the order for me
+                        </label>
+                    </div>
                 </div>
-                <div class="mb-3">
-                    <label class="form-label fw-semibold">Estimated Food Total ($)</label>
-                    <input type="number" class="form-control" name="estimated_food_total"
-                           min="0.01" step="0.01"
-                           value="<?= htmlspecialchars($_POST['estimated_food_total'] ?? '', ENT_QUOTES | ENT_HTML5) ?>" required>
+
+                <!-- Boost App fields (shown when boost_app selected) -->
+                <div id="boost-app-fields" class="<?= (($_POST['boost_payment_method'] ?? '') !== 'boost_app') ? 'd-none' : '' ?>">
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Boost Order Number <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control" name="boost_order_number"
+                               placeholder="e.g. 12345"
+                               value="<?= htmlspecialchars($_POST['boost_order_number'] ?? '', ENT_QUOTES | ENT_HTML5) ?>">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Name on the Boost Order <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control" name="customer_name"
+                               placeholder="Name used in the Boost app"
+                               value="<?= htmlspecialchars($_POST['customer_name'] ?? currentUser()['name'] ?? '', ENT_QUOTES | ENT_HTML5) ?>">
+                    </div>
                 </div>
-                <button type="submit" class="btn btn-primary btn-lg">
+
+                <!-- In-person fields (shown when in_person selected) -->
+                <div id="in-person-fields" class="<?= (($_POST['boost_payment_method'] ?? '') !== 'in_person') ? 'd-none' : '' ?>">
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Estimated Food Total ($) <span class="text-danger">*</span></label>
+                        <input type="number" class="form-control" name="estimated_food_total"
+                               min="0.01" step="0.01" placeholder="0.00"
+                               value="<?= htmlspecialchars($_POST['estimated_food_total'] ?? '', ENT_QUOTES | ENT_HTML5) ?>">
+                        <div class="form-text">Your courier will pay this amount in person and be reimbursed via Stripe.</div>
+                    </div>
+                </div>
+
+                <button type="submit" class="btn btn-primary btn-lg mt-2">
                     <i class="ti ti-arrow-right me-1"></i>Continue to Checkout
                 </button>
             </form>
         </div>
     </div>
+    <script>
+    document.querySelectorAll('.boost-pay-radio').forEach(function(radio) {
+        radio.addEventListener('change', function() {
+            document.getElementById('boost-app-fields').classList.toggle('d-none', this.value !== 'boost_app');
+            document.getElementById('in-person-fields').classList.toggle('d-none', this.value !== 'in_person');
+        });
+    });
+    </script>
 <?php endif; ?>
 
 <script>

@@ -76,6 +76,7 @@ function getPaymentConfig(): array {
 
 function formatOrderStatus(string $status): string {
     $map = [
+        'pending'           => 'Awaiting Payment',
         'open'              => 'Waiting for Courier',
         'accepted'          => 'Courier Accepted',
         'card_collected'    => 'Card Collected',
@@ -88,6 +89,7 @@ function formatOrderStatus(string $status): string {
 
 function getOrderStatusBadgeClass(string $status): string {
     $map = [
+        'pending'        => 'bg-secondary',
         'open'           => 'bg-warning text-dark',
         'accepted'       => 'bg-info text-dark',
         'card_collected' => 'bg-purple text-white',
@@ -214,54 +216,93 @@ function logAppError(string $message, string $level = 'error', array $context = 
  * If no hours rows exist for today the restaurant is considered always-open.
  */
 function getRestaurantStatus(int $restaurantId): array {
-    $open = ['status' => 'open', 'label' => 'Open', 'orders_accepted' => true, 'class' => 'success'];
+    $alwaysOpen = ['status' => 'open', 'label' => 'Open', 'orders_accepted' => true, 'class' => 'success'];
     try {
-        $db  = getDB();
-        $dow = (int)date('w'); // 0 = Sunday
-        $stmt = $db->prepare(
-            'SELECT * FROM restaurant_hours WHERE restaurant_id = ? AND day_of_week = ? LIMIT 1'
-        );
-        $stmt->execute([$restaurantId, $dow]);
-        $hours = $stmt->fetch();
+        $tz    = new DateTimeZone('America/New_York');
+        $now   = new DateTime('now', $tz);
+        $nowTs = $now->getTimestamp();
 
-        if (!$hours) {
-            return $open; // No hours configured → always open
+        $dow       = (int)$now->format('w');   // 0=Sun … 6=Sat
+        $yesterdow = ($dow + 6) % 7;
+
+        $db = getDB();
+        $stmt = $db->prepare(
+            'SELECT * FROM restaurant_hours WHERE restaurant_id = ? AND day_of_week IN (?, ?)'
+        );
+        $stmt->execute([$restaurantId, $dow, $yesterdow]);
+        $hoursMap = [];
+        foreach ($stmt->fetchAll() as $row) {
+            $hoursMap[(int)$row['day_of_week']] = $row;
         }
 
-        if ($hours['is_closed'] || !$hours['open_time'] || !$hours['close_time']) {
+        $todayDate    = $now->format('Y-m-d');
+        $tomorrowDate = (clone $now)->modify('+1 day')->format('Y-m-d');
+
+        /** Build Unix timestamp from Y-m-d date + HH:MM[:SS] time in Eastern Time */
+        $ts = static function (string $date, string $time) use ($tz): int {
+            return (new DateTime($date . ' ' . $time, $tz))->getTimestamp();
+        };
+
+        /** Resolve open / closing-soon / orders-closed label given a known close timestamp */
+        $resolveOpen = static function (int $nowTs, int $closeTs) use ($tz): array {
+            $warnMin   = max(1, (int)getAppSetting('closing_warning_minutes', '45'));
+            $cutoffMin = max(1, (int)getAppSetting('order_cutoff_minutes',    '15'));
+            $cutoffTs  = $closeTs - $cutoffMin * 60;
+            $warnTs    = $closeTs - $warnMin   * 60;
+
+            if ($nowTs >= $cutoffTs) {
+                return ['status' => 'orders_closed', 'label' => 'Orders Closed', 'orders_accepted' => false, 'class' => 'danger'];
+            }
+            if ($nowTs >= $warnTs) {
+                $minLeft = (int)ceil(($cutoffTs - $nowTs) / 60);
+                return ['status' => 'closing_soon', 'label' => "Closing soon ({$minLeft}m)", 'orders_accepted' => true, 'class' => 'warning'];
+            }
+            $closeFmt = (new DateTime('@' . $closeTs))->setTimezone($tz)->format('g:ia');
+            return ['status' => 'open', 'label' => "Open · closes {$closeFmt}", 'orders_accepted' => true, 'class' => 'success'];
+        };
+
+        // ── Check if we're still inside yesterday's cross-midnight window ────────
+        if (isset($hoursMap[$yesterdow])) {
+            $yh = $hoursMap[$yesterdow];
+            // Cross-midnight if close_time string ≤ open_time string (e.g. close 02:00, open 22:00)
+            if (!$yh['is_closed'] && $yh['open_time'] && $yh['close_time']
+                && strcmp($yh['close_time'], $yh['open_time']) <= 0
+            ) {
+                $yCloseTs = $ts($todayDate, $yh['close_time']);
+                if ($nowTs < $yCloseTs) {
+                    // Still within yesterday's late-night session
+                    return $resolveOpen($nowTs, $yCloseTs);
+                }
+            }
+        }
+
+        // ── Today's hours ─────────────────────────────────────────────────────────
+        if (!isset($hoursMap[$dow])) {
+            return $alwaysOpen;
+        }
+
+        $th = $hoursMap[$dow];
+        if ($th['is_closed'] || !$th['open_time'] || !$th['close_time']) {
             return ['status' => 'closed', 'label' => 'Closed Today', 'orders_accepted' => false, 'class' => 'danger'];
         }
 
-        $now      = time();
-        $today    = date('Y-m-d');
-        $openTs   = strtotime($today . ' ' . $hours['open_time']);
-        $closeTs  = strtotime($today . ' ' . $hours['close_time']);
+        $openTs = $ts($todayDate, $th['open_time']);
+        // close_time ≤ open_time  →  restaurant closes after midnight (use tomorrow's date)
+        $closeTs = strcmp($th['close_time'], $th['open_time']) <= 0
+            ? $ts($tomorrowDate, $th['close_time'])
+            : $ts($todayDate,    $th['close_time']);
 
-        if ($now < $openTs) {
-            $openFmt = date('g:ia', $openTs);
+        if ($nowTs < $openTs) {
+            $openFmt = (new DateTime('@' . $openTs))->setTimezone($tz)->format('g:ia');
             return ['status' => 'not_open', 'label' => "Opens at {$openFmt}", 'orders_accepted' => false, 'class' => 'secondary'];
         }
-        if ($now >= $closeTs) {
+        if ($nowTs >= $closeTs) {
             return ['status' => 'closed', 'label' => 'Closed', 'orders_accepted' => false, 'class' => 'danger'];
         }
 
-        $warnMin   = max(1, (int)getAppSetting('closing_warning_minutes', '45'));
-        $cutoffMin = max(1, (int)getAppSetting('order_cutoff_minutes',    '15'));
-        $cutoffTs  = $closeTs - ($cutoffMin  * 60);
-        $warnTs    = $closeTs - ($warnMin    * 60);
-
-        if ($now >= $cutoffTs) {
-            return ['status' => 'orders_closed', 'label' => 'Orders Closed', 'orders_accepted' => false, 'class' => 'danger'];
-        }
-        if ($now >= $warnTs) {
-            $minLeft = (int)ceil(($cutoffTs - $now) / 60);
-            return ['status' => 'closing_soon', 'label' => "Closing soon ({$minLeft}m)", 'orders_accepted' => true, 'class' => 'warning'];
-        }
-
-        $closeFmt = date('g:ia', $closeTs);
-        return ['status' => 'open', 'label' => "Open · closes {$closeFmt}", 'orders_accepted' => true, 'class' => 'success'];
+        return $resolveOpen($nowTs, $closeTs);
     } catch (Throwable $e) {
-        return $open;
+        return ['status' => 'open', 'label' => 'Open', 'orders_accepted' => true, 'class' => 'success'];
     }
 }
 

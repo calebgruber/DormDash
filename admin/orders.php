@@ -12,7 +12,7 @@ $page      = max(1, (int)($_GET['page'] ?? 1));
 $offset    = ($page - 1) * $perPage;
 $filterStatus = $_GET['status'] ?? '';
 
-$validStatuses = ['open','accepted','card_collected','food_collected','delivered','cancelled'];
+$validStatuses = ['pending','open','accepted','card_collected','food_collected','delivered','cancelled'];
 
 // Handle cancel action
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
