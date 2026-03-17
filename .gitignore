@@ -1,9 +1,8 @@
 # Local configuration overrides (contains credentials — never commit)
 config/local.php
 
-# Composer dependencies
-vendor/
-composer.lock
+# vendor/ and composer.lock are intentionally committed so the app runs on servers
+# without requiring a separate composer install step (no CI/CD build pipeline).
 
 # Upload artifacts
 uploads/*
