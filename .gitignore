@@ -9,6 +9,9 @@ uploads/*
 !uploads/.gitkeep
 !uploads/.htaccess
 
+# Composer temp download artifacts
+vendor/composer/tmp-*.zip~
+
 # OS / editor noise
 .DS_Store
 Thumbs.db
