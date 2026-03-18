@@ -3,8 +3,6 @@ require_once __DIR__ . '/../includes/auth.php';
 require_once __DIR__ . '/../includes/email.php';
 requireLogin();
 
-startAppSession(); // already called by requireLogin → auth.php
-
 $user    = currentUser();
 $db      = getDB();
 $success = false;
@@ -12,16 +10,22 @@ $errors  = [];
 
 // Resend verification email
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'resend') {
-    if (!empty($user['email_verified'])) {
+    if (!verifyCsrfToken($_POST['csrf_token'] ?? '')) {
+        $errors[] = 'Invalid CSRF token. Please try again.';
+    } elseif (!empty($user['email_verified'])) {
         header('Location: ' . APP_URL . '/order/');
         exit;
+    } else {
+        // Generate new token
+        $token = bin2hex(random_bytes(32));
+        $db->prepare('UPDATE users SET email_verify_token = ? WHERE id = ?')->execute([$token, $user['id']]);
+        sendVerificationEmail($user['email'], $user['name'], $token);
+        $success = true;
     }
-    // Generate new token
-    $token = bin2hex(random_bytes(32));
-    $db->prepare('UPDATE users SET email_verify_token = ? WHERE id = ?')->execute([$token, $user['id']]);
-    sendVerificationEmail($user['email'], $user['name'], $token);
-    $success = true;
 }
+
+$csrf = generateCsrfToken();
+require_once __DIR__ . '/../includes/functions.php';
 ?>
 <?php require_once __DIR__ . '/../includes/header.php'; ?>
 
@@ -54,6 +58,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'resen
             <?php endif; ?>
 
             <form method="POST" action="">
+                <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrf) ?>">
                 <button type="submit" name="action" value="resend" class="btn btn-primary">
                     <i class="ti ti-send me-1"></i>Resend Verification Email
                 </button>

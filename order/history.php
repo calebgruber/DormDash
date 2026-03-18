@@ -170,7 +170,7 @@ unset($order);
                         <?php endif; ?>
                         <?php if ((int)($order['meal_swipes_applied'] ?? 0) > 0): ?>
                             <div class="mt-1 small text-success">
-                                <i class="ti ti-star me-1"></i><?= (int)$order['meal_swipes_applied'] ?> meal swipe<?= $order['meal_swipes_applied'] > 1 ? 's' : '' ?> applied
+                                <i class="ti ti-star me-1"></i><?= (int)$order['meal_swipes_applied'] ?> meal swipe<?= (int)$order['meal_swipes_applied'] > 1 ? 's' : '' ?> applied
                             </div>
                         <?php endif; ?>
                     </div>

@@ -231,15 +231,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         ];
                     }
 
-                    // Deduct meal swipe credit from line items
-                    $remainingCredit = $mealSwipeCredit;
-                    if ($remainingCredit > 0) {
+                    // Deduct meal swipe credit from line items (work in cents to avoid float issues)
+                    $remainingCreditCents = (int)round($mealSwipeCredit * 100);
+                    if ($remainingCreditCents > 0) {
                         foreach ($lineItems as &$li) {
-                            $amt = (int)$li['price_data']['unit_amount'];
-                            if ($remainingCredit <= 0) break;
-                            $deduct = min($amt, (int)round($remainingCredit * 100));
+                            if ($remainingCreditCents <= 0) break;
+                            $amt    = (int)$li['price_data']['unit_amount'];
+                            $deduct = min($amt, $remainingCreditCents);
                             $li['price_data']['unit_amount'] = $amt - $deduct;
-                            $remainingCredit -= $deduct / 100;
+                            $remainingCreditCents -= $deduct;
                         }
                         unset($li);
                         // Remove zero-amount line items
