@@ -203,9 +203,39 @@ if ($currentUser && $currentUser['role'] === 'admin') {
                             </a>
                         </li>
                         <li class="nav-item"><a class="nav-link" href="<?= APP_URL ?>/config/"><i class="ti ti-settings me-1"></i>Settings</a></li>
+                        <!-- Admin preview modes -->
+                        <li class="nav-item dropdown">
+                            <a class="nav-link dropdown-toggle" href="#" data-bs-toggle="dropdown">
+                                <i class="ti ti-user-cog me-1"></i>Preview As
+                            </a>
+                            <div class="dropdown-menu">
+                                <a class="dropdown-item" href="<?= APP_URL ?>/order/">
+                                    <i class="ti ti-user me-2"></i>Customer View
+                                </a>
+                                <a class="dropdown-item" href="<?= APP_URL ?>/deliver/">
+                                    <i class="ti ti-bike me-2"></i>Courier View
+                                </a>
+                            </div>
+                        </li>
                     <?php elseif ($currentUser['role'] === 'courier'): ?>
-                        <li class="nav-item"><a class="nav-link" href="<?= APP_URL ?>/deliver/"><i class="ti ti-bike me-1"></i>Deliveries</a></li>
-                        <li class="nav-item"><a class="nav-link" href="<?= APP_URL ?>/order/"><i class="ti ti-salad me-1"></i>Order Food</a></li>
+                        <!-- Courier sees customer nav by default + courier mode toggle -->
+                        <li class="nav-item"><a class="nav-link" href="<?= APP_URL ?>/order/"><i class="ti ti-salad me-1"></i>Browse</a></li>
+                        <li class="nav-item"><a class="nav-link" href="<?= APP_URL ?>/order/history"><i class="ti ti-clock me-1"></i>My Orders</a></li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="<?= APP_URL ?>/order/cart">
+                                <i class="ti ti-shopping-cart me-1"></i>Cart
+                                <?php if ($cartCount > 0): ?>
+                                    <span class="badge bg-danger ms-1"><?= $cartCount ?></span>
+                                <?php endif; ?>
+                            </a>
+                        </li>
+                        <?php if ($currentUser['courier_approved']): ?>
+                        <li class="nav-item">
+                            <a class="nav-link fw-semibold text-success" href="<?= APP_URL ?>/deliver/">
+                                <i class="ti ti-bike me-1"></i>Courier Mode
+                            </a>
+                        </li>
+                        <?php endif; ?>
                     <?php else: ?>
                         <li class="nav-item"><a class="nav-link" href="<?= APP_URL ?>/order/"><i class="ti ti-salad me-1"></i>Browse</a></li>
                         <li class="nav-item"><a class="nav-link" href="<?= APP_URL ?>/order/history"><i class="ti ti-clock me-1"></i>My Orders</a></li>

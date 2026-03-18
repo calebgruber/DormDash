@@ -142,6 +142,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 if ($fav) setAppSetting('app_favicon_path', $fav);
                 else $errors[] = 'Invalid favicon image.';
             }
+            // Login banner upload
+            if (!empty($_FILES['login_banner']['tmp_name']) && $_FILES['login_banner']['error'] !== UPLOAD_ERR_NO_FILE) {
+                $banner = uploadFile($_FILES['login_banner'], UPLOAD_DIR);
+                if ($banner) setAppSetting('login_banner_path', $banner);
+                else $errors[] = 'Invalid login banner image.';
+            }
             if (empty($errors)) $success = 'App settings saved.';
         }
 
@@ -593,6 +599,15 @@ $activeTab = $_GET['tab'] ?? 'appearance';
                         <input type="file" class="form-control" name="app_favicon" accept="image/*">
                         <?php $favPath = getAppSetting('app_favicon_path'); if ($favPath): ?>
                             <div class="mt-2"><img src="<?= htmlspecialchars(UPLOAD_URL . $favPath, ENT_QUOTES | ENT_HTML5) ?>" height="32" alt="Favicon"></div>
+                        <?php endif; ?>
+                    </div>
+                    <div class="col-12">
+                        <label class="form-label fw-semibold">Login / Register Page Banner <span class="text-muted fw-normal">(optional — left panel)</span></label>
+                        <input type="file" class="form-control" name="login_banner" accept="image/*">
+                        <?php $bannerPath = getAppSetting('login_banner_path'); if ($bannerPath): ?>
+                            <div class="mt-2"><img src="<?= htmlspecialchars(UPLOAD_URL . $bannerPath, ENT_QUOTES | ENT_HTML5) ?>" height="80" alt="Login banner" style="border-radius:.4rem;object-fit:cover;"></div>
+                        <?php else: ?>
+                            <div class="form-text">If left empty a purple gradient will be used. Recommended size: 800×600px.</div>
                         <?php endif; ?>
                     </div>
                     <div class="col-md-6">

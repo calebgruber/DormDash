@@ -1,5 +1,6 @@
 <?php
 require_once __DIR__ . '/../includes/auth.php';
+require_once __DIR__ . '/../includes/functions.php';
 require_once __DIR__ . '/../includes/email.php';
 startAppSession();
 
@@ -44,7 +45,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         if (empty($_FILES['more_card_photo']['tmp_name']) || $_FILES['more_card_photo']['error'] === UPLOAD_ERR_NO_FILE) {
             $errors[] = 'A photo of your MORE card is required.';
         } else {
-            require_once __DIR__ . '/../includes/functions.php';
             $moreCardPhoto = uploadFile($_FILES['more_card_photo'], UPLOAD_DIR);
             if ($moreCardPhoto === null) $errors[] = 'MORE card photo must be a valid image (JPG, PNG, etc.).';
         }
@@ -85,15 +85,28 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 }
 
 $csrf = generateCsrfToken();
+
+$loginBanner = getAppSetting('login_banner_path');
 ?>
 <?php require_once __DIR__ . '/../includes/header.php'; ?>
 
-<div class="row justify-content-center">
-    <div class="col-md-7 col-lg-6">
-        <div class="card shadow-sm border-0">
-            <div class="card-body p-4">
-                <h2 class="card-title text-center mb-1 fw-bold">Create Account</h2>
-                <p class="text-center text-muted mb-4 small">SUNY Purchase students only &mdash; @purchase.edu required</p>
+<div class="row g-0 align-items-stretch" style="min-height:70vh;">
+    <!-- Left: banner -->
+    <div class="col-md-5 d-none d-md-flex align-items-center justify-content-center rounded-start overflow-hidden"
+         style="<?php if ($loginBanner): ?>background:url('<?= htmlspecialchars(UPLOAD_URL . $loginBanner, ENT_QUOTES | ENT_HTML5) ?>') center/cover no-repeat;<?php else: ?>background:linear-gradient(135deg,#6B46C1,#2d1b69);<?php endif; ?>min-height:460px;">
+        <div class="text-center p-5" style="background:rgba(0,0,0,0.35);border-radius:1rem;">
+            <i class="ti ti-motorbike text-white" style="font-size:4rem;"></i>
+            <h2 class="text-white fw-bold mt-3 mb-2"><?= htmlspecialchars(APP_NAME, ENT_QUOTES | ENT_HTML5) ?></h2>
+            <p class="text-white-50 mb-0">Campus food delivery at SUNY Purchase</p>
+        </div>
+    </div>
+
+    <!-- Right: form -->
+    <div class="col-md-7">
+        <div class="card h-100 border-0 shadow-none rounded-0">
+            <div class="card-body d-flex flex-column justify-content-center p-4 p-lg-5">
+                <h2 class="fw-bold mb-1">Create Account</h2>
+                <p class="text-muted mb-4 small">SUNY Purchase students only &mdash; @purchase.edu required</p>
 
                 <?php if ($success): ?>
                     <div class="alert alert-success">
@@ -187,7 +200,7 @@ $csrf = generateCsrfToken();
                     </form>
 
                     <p class="text-center mt-3 mb-0 small">
-                        Already have an account? <a href="<?= APP_URL ?>/auth/login">Sign in</a>
+                        Already have an account? <a href="<?= APP_URL ?>/auth/login" class="fw-semibold">Sign in</a>
                     </p>
                 <?php endif; ?>
             </div>

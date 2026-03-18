@@ -1,7 +1,7 @@
 <?php
 require_once __DIR__ . '/../includes/auth.php';
 require_once __DIR__ . '/../includes/functions.php';
-requireLogin();
+startAppSession();
 
 $restaurantId = (int)($_GET['id'] ?? 0);
 if ($restaurantId <= 0) {
@@ -17,6 +17,11 @@ $restaurant = $stmt->fetch();
 if (!$restaurant) {
     header('Location: ' . APP_URL . '/order/');
     exit;
+}
+
+// Require login for add-to-cart and text orders
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    requireLogin();
 }
 
 // Check open status
@@ -218,16 +223,28 @@ $cartCount = isset($_SESSION['cart']) ? getCartItemCount($_SESSION['cart']) : 0;
                                                 <span class="text-muted small">Included</span>
                                             <?php endif; ?>
                                             <?php if (!empty($item['option_groups'])): ?>
+                                                <?php if (isLoggedIn()): ?>
                                                 <button class="btn btn-primary btn-sm"
                                                         data-bs-toggle="modal"
                                                         data-bs-target="#optModal<?= (int)$item['id'] ?>">
                                                     <i class="ti ti-plus me-1"></i>Customize
                                                 </button>
+                                                <?php else: ?>
+                                                <a href="<?= APP_URL ?>/auth/login?return=<?= urlencode($_SERVER['REQUEST_URI']) ?>" class="btn btn-outline-primary btn-sm">
+                                                    <i class="ti ti-login me-1"></i>Sign in to Order
+                                                </a>
+                                                <?php endif; ?>
                                             <?php else: ?>
+                                                <?php if (isLoggedIn()): ?>
                                                 <button class="btn btn-primary btn-sm add-to-cart-btn"
                                                         data-item-id="<?= (int)$item['id'] ?>">
                                                     <i class="ti ti-plus me-1"></i>Add
                                                 </button>
+                                                <?php else: ?>
+                                                <a href="<?= APP_URL ?>/auth/login?return=<?= urlencode($_SERVER['REQUEST_URI']) ?>" class="btn btn-outline-primary btn-sm">
+                                                    <i class="ti ti-login me-1"></i>Sign in to Order
+                                                </a>
+                                                <?php endif; ?>
                                             <?php endif; ?>
                                         </div>
                                     </div>
@@ -397,7 +414,7 @@ $cartCount = isset($_SESSION['cart']) ? getCartItemCount($_SESSION['cart']) : 0;
                         <label class="form-label fw-semibold">Name on the Boost Order <span class="text-danger">*</span></label>
                         <input type="text" class="form-control" name="customer_name"
                                placeholder="Name used in the Boost app"
-                               value="<?= htmlspecialchars($_POST['customer_name'] ?? currentUser()['name'] ?? '', ENT_QUOTES | ENT_HTML5) ?>">
+                               value="<?= htmlspecialchars($_POST['customer_name'] ?? (isLoggedIn() ? currentUser()['name'] : ''), ENT_QUOTES | ENT_HTML5) ?>">
                     </div>
                 </div>
 

@@ -6,6 +6,23 @@ requireLogin();
 $cart = $_SESSION['cart'] ?? [];
 $csrf = generateCsrfToken();
 
+// Check for a pending (unpaid) order
+$pendingOrderId = $_SESSION['pending_order_id'] ?? null;
+$pendingOrder   = null;
+if ($pendingOrderId) {
+    try {
+        $db = getDB();
+        $user = currentUser();
+        $pStmt = $db->prepare(
+            'SELECT o.*, r.name AS restaurant_name FROM orders o
+             LEFT JOIN restaurants r ON r.id = o.restaurant_id
+             WHERE o.id = ? AND o.customer_id = ? AND o.payment_status = "pending" AND o.status = "pending"'
+        );
+        $pStmt->execute([$pendingOrderId, $user['id']]);
+        $pendingOrder = $pStmt->fetch() ?: null;
+    } catch (Throwable $e) {}
+}
+
 // Check meal groups
 $matchedGroups = [];
 if (!empty($cart)) {
@@ -20,6 +37,14 @@ if (!empty($cart)) {
 </div>
 
 <?php if (empty($cart)): ?>
+    <?php if ($pendingOrder): ?>
+        <div class="alert alert-warning mb-3">
+            <i class="ti ti-clock me-2"></i>
+            <strong>You have an incomplete payment.</strong>
+            Order #<?= (int)$pendingOrder['id'] ?> from <?= htmlspecialchars($pendingOrder['restaurant_name'] ?? 'Unknown', ENT_QUOTES | ENT_HTML5) ?> is waiting for payment.
+            <a href="<?= APP_URL ?>/order/checkout" class="btn btn-warning btn-sm ms-2">Complete Payment</a>
+        </div>
+    <?php endif; ?>
     <div class="alert alert-info"><i class="ti ti-info-circle me-2"></i>Your cart is empty.</div>
     <a href="<?= APP_URL ?>/order/" class="btn btn-primary">
         <i class="ti ti-arrow-left me-1"></i> Browse Restaurants

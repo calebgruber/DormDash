@@ -98,11 +98,29 @@ $csrf = generateCsrfToken();
             <div class="card-header bg-white fw-bold">Order Items</div>
             <div class="card-body p-0">
                 <table class="table mb-0">
-                    <thead class="table-light"><tr><th>Item</th><th class="text-center">Qty</th><th class="text-end">Price</th></tr></thead>
+                    <thead class="table-light"><tr><th>Item</th><th>Customisations</th><th class="text-center">Qty</th><th class="text-end">Price</th></tr></thead>
                     <tbody>
                         <?php foreach ($items as $it): ?>
                             <tr>
-                                <td><?= htmlspecialchars($it['item_name'], ENT_QUOTES | ENT_HTML5) ?></td>
+                                <td class="fw-semibold"><?= htmlspecialchars($it['item_name'], ENT_QUOTES | ENT_HTML5) ?></td>
+                                <td class="small text-muted">
+                                    <?php
+                                    $opts = !empty($it['options_json']) ? json_decode($it['options_json'], true) : null;
+                                    if ($opts):
+                                        foreach ($opts as $groupName => $choice):
+                                            $choiceStr = is_array($choice) ? implode(', ', $choice) : $choice;
+                                    ?>
+                                        <span class="badge bg-light text-dark border me-1">
+                                            <?= htmlspecialchars($groupName, ENT_QUOTES | ENT_HTML5) ?>:
+                                            <?= htmlspecialchars($choiceStr, ENT_QUOTES | ENT_HTML5) ?>
+                                        </span>
+                                    <?php
+                                        endforeach;
+                                    else:
+                                        echo '<span class="text-muted">—</span>';
+                                    endif;
+                                    ?>
+                                </td>
                                 <td class="text-center"><?= (int)$it['quantity'] ?></td>
                                 <td class="text-end"><?= formatMoney((float)$it['unit_price'] * (int)$it['quantity']) ?></td>
                             </tr>

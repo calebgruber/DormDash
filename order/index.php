@@ -1,7 +1,7 @@
 <?php
 require_once __DIR__ . '/../includes/auth.php';
 require_once __DIR__ . '/../includes/functions.php';
-requireLogin();
+startAppSession();
 
 $db   = getDB();
 $stmt = $db->query('SELECT * FROM restaurants WHERE active = 1 ORDER BY name ASC');
@@ -22,16 +22,12 @@ $restaurants = $stmt->fetchAll();
         <?php foreach ($restaurants as $r): ?>
             <?php
             $status = getRestaurantStatus((int)$r['id']);
-            $typeBadge = [
-                'dining_hall' => ['label' => 'Dining Hall',   'class' => 'bg-green text-white'],
-                'einstein'    => ['label' => 'Einstein Bros', 'class' => 'bg-yellow text-dark'],
-                'boba'        => ['label' => 'Boba Tea',      'class' => 'bg-purple text-white'],
-                'other'       => ['label' => 'Other',         'class' => 'bg-secondary'],
-            ];
-            $badge = $typeBadge[$r['type']] ?? ['label' => ucfirst($r['type']), 'class' => 'bg-secondary'];
+            $isOpen = $status['orders_accepted'];
+            $openClosedBadgeClass = $isOpen ? 'bg-success' : 'bg-danger';
+            $openClosedLabel      = $isOpen ? ($status['status'] === 'closing_soon' ? $status['label'] : 'Open') : ($status['label'] ?: 'Closed');
             ?>
             <div class="col-sm-6 col-lg-4">
-                <div class="card h-100 shadow-sm border-0 hover-lift <?= $status['orders_accepted'] ? '' : 'opacity-75' ?>">
+                <div class="card h-100 shadow-sm border-0 hover-lift <?= $isOpen ? '' : 'opacity-75' ?>">
                     <?php if ($r['banner_image']): ?>
                         <img src="<?= htmlspecialchars(UPLOAD_URL . $r['banner_image'], ENT_QUOTES | ENT_HTML5) ?>"
                              alt="<?= htmlspecialchars($r['name'], ENT_QUOTES | ENT_HTML5) ?>"
@@ -44,22 +40,21 @@ $restaurants = $stmt->fetchAll();
                     <?php endif; ?>
 
                     <div class="card-body d-flex flex-column">
+                        <!-- Name + Open/Closed badge -->
                         <div class="d-flex justify-content-between align-items-start mb-2">
                             <h5 class="card-title mb-0 fw-bold"><?= htmlspecialchars($r['name'], ENT_QUOTES | ENT_HTML5) ?></h5>
-                            <span class="badge <?= $badge['class'] ?> ms-2 flex-shrink-0"><?= $badge['label'] ?></span>
+                            <span class="badge <?= $openClosedBadgeClass ?> ms-2 flex-shrink-0">
+                                <i class="ti ti-clock me-1"></i><?= htmlspecialchars($openClosedLabel, ENT_QUOTES | ENT_HTML5) ?>
+                            </span>
                         </div>
 
-                        <!-- Open/closed status -->
-                        <div class="mb-2">
-                            <span class="badge bg-<?= $status['class'] ?>">
-                                <i class="ti ti-clock me-1"></i><?= htmlspecialchars($status['label'], ENT_QUOTES | ENT_HTML5) ?>
-                            </span>
-                            <?php if ($r['meal_swipe_eligible']): ?>
-                                <span class="badge bg-purple ms-1">
-                                    <i class="ti ti-id-badge-2 me-1"></i>Meal Swipe
+                        <?php if ($r['meal_swipe_eligible']): ?>
+                            <div class="mb-2">
+                                <span class="badge bg-purple">
+                                    <i class="ti ti-id-badge-2 me-1"></i>Meal Swipe Eligible
                                 </span>
-                            <?php endif; ?>
-                        </div>
+                            </div>
+                        <?php endif; ?>
 
                         <?php if ($r['location']): ?>
                             <p class="card-text text-muted small mb-1">
@@ -70,7 +65,12 @@ $restaurants = $stmt->fetchAll();
                             <p class="card-text text-muted small flex-grow-1"><?= htmlspecialchars($r['description'], ENT_QUOTES | ENT_HTML5) ?></p>
                         <?php endif; ?>
 
-                        <?php if ($status['orders_accepted']): ?>
+                        <?php if (!isLoggedIn()): ?>
+                            <a href="<?= APP_URL ?>/auth/login"
+                               class="btn btn-outline-primary mt-auto">
+                                <i class="ti ti-login me-1"></i>Sign in to Order
+                            </a>
+                        <?php elseif ($isOpen): ?>
                             <a href="<?= APP_URL ?>/order/restaurant?id=<?= (int)$r['id'] ?>"
                                class="btn btn-primary mt-auto">
                                 <i class="ti ti-shopping-bag me-1"></i>Order Now

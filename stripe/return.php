@@ -52,6 +52,9 @@ if ($sessionId) {
 
             $db->prepare('INSERT INTO order_events (order_id, type) VALUES (?, "placed")')->execute([$orderId]);
 
+            // Clear cart and pending order from session on successful payment
+            unset($_SESSION['cart'], $_SESSION['prepaid_order'], $_SESSION['text_order'], $_SESSION['pending_order_id']);
+
             // Send confirmation email
             $uStmt = $db->prepare('SELECT * FROM users WHERE id = ?');
             $uStmt->execute([$order['customer_id']]);
