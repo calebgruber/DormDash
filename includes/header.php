@@ -86,9 +86,82 @@ if ($currentUser && $currentUser['role'] === 'admin') {
         .navbar-brand-text { font-weight: 800; font-size: 1.15rem; letter-spacing: -.02em; }
         .restaurant-banner { width: 100%; height: 220px; object-fit: cover; border-radius: .5rem; margin-bottom: 1.5rem; }
         .menu-item-img { width: 80px; height: 80px; object-fit: cover; border-radius: .4rem; flex-shrink: 0; }
-        .card-img-top.banner-thumb { height: 160px; object-fit: cover; }
-        .hover-lift { transition: transform .15s ease, box-shadow .15s ease; }
-        .hover-lift:hover { transform: translateY(-3px); box-shadow: 0 .5rem 1.5rem rgba(0,0,0,.12) !important; }
+        .card-img-top.banner-thumb { height: 160px; object-fit: cover; border-radius: 0; }
+
+        /* ── Card System — Framer-precision layered shadow ───────────── */
+        .card {
+            border-radius: 5px !important;
+            border: none !important;
+            box-shadow:
+                rgba(0, 0, 0, 0.18) 0px 0.602187px 0.602187px -1.25px,
+                rgba(0, 0, 0, 0.16) 0px 2.28853px  2.28853px  -2.5px,
+                rgba(0, 0, 0, 0.06) 0px 10px       10px       -3.75px !important;
+            background-color: #ffffff;
+            overflow: hidden;
+            transition: box-shadow .22s ease, transform .22s ease;
+        }
+        /* card-header: transparent + a single hairline divider (skip when a bg-* class is present) */
+        .card-header:not([class*="bg-"]) {
+            background-color: transparent;
+            border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+            padding: 0.875rem 1.25rem;
+        }
+        .card-footer:not([class*="bg-"]) {
+            background-color: transparent;
+            border-top: 1px solid rgba(0, 0, 0, 0.06);
+        }
+
+        /* Hover lift — tighter shadow that matches the base system */
+        .hover-lift  { transition: transform .22s ease, box-shadow .22s ease; }
+        .hover-card  { transition: transform .22s ease, box-shadow .22s ease; }
+        .hover-lift:hover,
+        .hover-card:hover {
+            transform: translateY(-2px);
+            box-shadow:
+                rgba(0, 0, 0, 0.14) 0px 1px    1px    -1.25px,
+                rgba(0, 0, 0, 0.12) 0px 4.5px  4.5px  -2.5px,
+                rgba(0, 0, 0, 0.09) 0px 18px   18px   -3.75px !important;
+        }
+
+        /* ── Stat card helpers (admin dashboard) ─────────────────────── */
+        .dd-stat-card { position: relative; }
+        .dd-stat-accent {
+            position: absolute;
+            top: 0; left: 0;
+            width: 4px; height: 100%;
+        }
+        .dd-stat-value { font-size: 2rem; font-weight: 700; line-height: 1.1; color: var(--tblr-body-color); }
+        .dd-stat-label { font-size: 0.8125rem; color: var(--tblr-muted, #6c757d); margin-top: 0.3rem; letter-spacing: 0.01em; }
+        .dd-stat-icon {
+            width: 46px; height: 46px;
+            border-radius: 10px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 1.4rem;
+            flex-shrink: 0;
+        }
+
+        /* ── Dark-mode cards ─────────────────────────────────────────── */
+        [data-bs-theme="dark"] .card {
+            background-color: var(--tblr-bg-surface, #24253a) !important;
+            box-shadow:
+                rgba(0, 0, 0, 0.50) 0px 0.602187px 0.602187px -1.25px,
+                rgba(0, 0, 0, 0.42) 0px 2.28853px  2.28853px  -2.5px,
+                rgba(0, 0, 0, 0.22) 0px 10px       10px       -3.75px !important;
+        }
+        [data-bs-theme="dark"] .card-header:not([class*="bg-"]) {
+            border-bottom-color: rgba(255, 255, 255, 0.06);
+        }
+        [data-bs-theme="dark"] .card-footer:not([class*="bg-"]) {
+            border-top-color: rgba(255, 255, 255, 0.06);
+        }
+        /* legacy bg-white headers still need fixing in dark mode */
+        [data-bs-theme="dark"] .card-header.bg-white,
+        [data-bs-theme="dark"] .card-header.bg-white.fw-bold {
+            background-color: transparent !important;
+            border-bottom: 1px solid rgba(255,255,255,0.06) !important;
+            color: var(--tblr-body-color) !important;
+        }
+        [data-bs-theme="dark"] .dd-stat-value { color: var(--tblr-body-color, #e9ecef); }
 
         /* ── Dark-mode table header fix ──────────────────────────────── */
         [data-bs-theme="dark"] .table > thead > tr > th,
@@ -102,8 +175,6 @@ if ($currentUser && $currentUser['role'] === 'admin') {
             color: var(--tblr-body-color) !important;
             border-color: rgba(255,255,255,.07) !important;
         }
-        [data-bs-theme="dark"] .card-header.bg-white,
-        [data-bs-theme="dark"] .card-header.bg-white.fw-bold { background-color: var(--tblr-bg-surface) !important; color: var(--tblr-body-color) !important; }
 
         /* ── Soft / ghost badges (semi-transparent bg, full-colour text) */
         .badge.bg-danger    { background-color: rgba(214,57,57,.15)    !important; color: #d63939 !important; }

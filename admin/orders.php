@@ -119,7 +119,7 @@ $csrf = generateCsrfToken();
     <div class="row g-4">
         <div class="col-lg-7">
             <div class="card shadow-sm border-0 mb-4">
-                <div class="card-header bg-dark text-white d-flex justify-content-between">
+                <div class="card-header fw-semibold d-flex justify-content-between">
                     <span>Order #<?= (int)$detailOrder['id'] ?> — <?= htmlspecialchars($detailOrder['restaurant_name'], ENT_QUOTES | ENT_HTML5) ?></span>
                     <span class="badge <?= getOrderStatusBadgeClass($detailOrder['status']) ?>"><?= formatOrderStatus($detailOrder['status']) ?></span>
                 </div>
@@ -135,7 +135,7 @@ $csrf = generateCsrfToken();
 
             <?php if (!empty($detailItems)): ?>
             <div class="card shadow-sm border-0 mb-4">
-                <div class="card-header bg-white fw-bold">Items</div>
+                <div class="card-header fw-bold">Items</div>
                 <div class="card-body p-0">
                     <table class="table mb-0">
                         <thead class="table-light"><tr><th>Item</th><th class="text-center">Qty</th><th class="text-end">Price</th></tr></thead>
@@ -154,7 +154,7 @@ $csrf = generateCsrfToken();
             <?php endif; ?>
 
             <div class="card shadow-sm border-0 mb-4">
-                <div class="card-header bg-white fw-bold">Fee Breakdown</div>
+                <div class="card-header fw-bold">Fee Breakdown</div>
                 <div class="card-body">
                     <div class="d-flex justify-content-between mb-1"><span>Food Total</span><span><?= formatMoney((float)$detailOrder['food_total']) ?></span></div>
                     <div class="d-flex justify-content-between mb-1"><span>Delivery Fee</span><span><?= formatMoney((float)$detailOrder['delivery_fee']) ?></span></div>
@@ -179,7 +179,7 @@ $csrf = generateCsrfToken();
         </div>
         <div class="col-lg-5">
             <div class="card shadow-sm border-0">
-                <div class="card-header bg-white fw-bold">Timeline</div>
+                <div class="card-header fw-bold">Timeline</div>
                 <div class="card-body p-0">
                     <?php if (!empty($detailEvents)): ?>
                         <ul class="list-group list-group-flush">

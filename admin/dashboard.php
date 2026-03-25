@@ -17,38 +17,29 @@ $revenue = $db->query("SELECT COALESCE(SUM(food_total + delivery_fee + service_f
 
 <!-- Stats Cards -->
 <div class="row g-4 mb-5">
-    <div class="col-sm-6 col-lg-3">
-        <div class="card text-white bg-primary shadow-sm border-0 h-100">
-            <div class="card-body text-center">
-                <div class="fs-1 fw-bold"><?= (int)$ordersToday ?></div>
-                <div>Orders Today</div>
+    <?php
+    $stats = [
+        ['value' => (int)$ordersToday,           'label' => 'Orders Today',         'icon' => 'ti-shopping-bag', 'color' => '#6B46C1', 'bg' => 'rgba(107,70,193,.12)'],
+        ['value' => (int)$pendingApps,            'label' => 'Pending Applications', 'icon' => 'ti-user-check',   'color' => '#f59e0b', 'bg' => 'rgba(245,158,11,.12)'],
+        ['value' => (int)$activeOrders,           'label' => 'Active Orders',        'icon' => 'ti-motorbike',    'color' => '#0ea5e9', 'bg' => 'rgba(14,165,233,.12)'],
+        ['value' => formatMoney((float)$revenue), 'label' => 'Total Revenue',        'icon' => 'ti-cash',         'color' => '#10b981', 'bg' => 'rgba(16,185,129,.12)'],
+    ];
+    foreach ($stats as $s): ?>
+        <div class="col-sm-6 col-lg-3">
+            <div class="card h-100 dd-stat-card">
+                <div class="dd-stat-accent" style="background-color:<?= $s['color'] ?>;"></div>
+                <div class="card-body d-flex align-items-center justify-content-between ps-4">
+                    <div>
+                        <div class="dd-stat-value"><?= is_string($s['value']) ? htmlspecialchars($s['value'], ENT_QUOTES | ENT_HTML5) : (int)$s['value'] ?></div>
+                        <div class="dd-stat-label"><?= htmlspecialchars($s['label'], ENT_QUOTES | ENT_HTML5) ?></div>
+                    </div>
+                    <div class="dd-stat-icon ms-3" style="background-color:<?= $s['bg'] ?>; color:<?= $s['color'] ?>;">
+                        <i class="ti <?= htmlspecialchars($s['icon']) ?>"></i>
+                    </div>
+                </div>
             </div>
         </div>
-    </div>
-    <div class="col-sm-6 col-lg-3">
-        <div class="card text-white bg-warning shadow-sm border-0 h-100">
-            <div class="card-body text-center" style="color:#333!important;">
-                <div class="fs-1 fw-bold"><?= (int)$pendingApps ?></div>
-                <div>Pending Applications</div>
-            </div>
-        </div>
-    </div>
-    <div class="col-sm-6 col-lg-3">
-        <div class="card text-white bg-info shadow-sm border-0 h-100">
-            <div class="card-body text-center" style="color:#333!important;">
-                <div class="fs-1 fw-bold"><?= (int)$activeOrders ?></div>
-                <div>Active Orders</div>
-            </div>
-        </div>
-    </div>
-    <div class="col-sm-6 col-lg-3">
-        <div class="card text-white bg-success shadow-sm border-0 h-100">
-            <div class="card-body text-center">
-                <div class="fs-1 fw-bold"><?= formatMoney((float)$revenue) ?></div>
-                <div>Total Revenue</div>
-            </div>
-        </div>
-    </div>
+    <?php endforeach; ?>
 </div>
 
 <!-- Navigation Cards -->

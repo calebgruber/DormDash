@@ -187,7 +187,7 @@ $csrf = generateCsrfToken();
 <?php if ($restaurantId > 0): ?>
     <!-- Add Category -->
     <div class="card shadow-sm border-0 mb-4">
-        <div class="card-header bg-white fw-bold">Add Category</div>
+        <div class="card-header fw-bold">Add Category</div>
         <div class="card-body">
             <form method="POST" class="d-flex gap-3 align-items-end">
                 <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrf) ?>">
@@ -203,7 +203,7 @@ $csrf = generateCsrfToken();
 
     <!-- Add Item Form -->
     <div class="card shadow-sm border-0 mb-4">
-        <div class="card-header bg-white fw-bold">Add Menu Item</div>
+        <div class="card-header fw-bold">Add Menu Item</div>
         <div class="card-body">
             <form method="POST" action="">
                 <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrf) ?>">

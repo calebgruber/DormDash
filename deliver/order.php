@@ -73,8 +73,8 @@ $csrf = generateCsrfToken();
 <div class="row g-4">
     <div class="col-lg-7">
         <div class="card shadow-sm border-0 mb-4">
-            <div class="card-header bg-dark text-white d-flex justify-content-between">
-                <span>Order #<?= (int)$orderId ?> — <?= htmlspecialchars($order['restaurant_name'], ENT_QUOTES | ENT_HTML5) ?></span>
+            <div class="card-header fw-semibold d-flex justify-content-between align-items-center">
+                <span><i class="ti ti-package me-2 text-primary"></i>Order #<?= (int)$orderId ?> — <?= htmlspecialchars($order['restaurant_name'], ENT_QUOTES | ENT_HTML5) ?></span>
                 <span class="badge <?= getOrderStatusBadgeClass($order['status']) ?>"><?= formatOrderStatus($order['status']) ?></span>
             </div>
             <div class="card-body">
@@ -95,7 +95,7 @@ $csrf = generateCsrfToken();
         <!-- Items -->
         <?php if (!empty($items)): ?>
         <div class="card shadow-sm border-0 mb-4">
-            <div class="card-header bg-white fw-bold">Order Items</div>
+            <div class="card-header fw-bold">Order Items</div>
             <div class="card-body p-0">
                 <table class="table mb-0">
                     <thead class="table-light"><tr><th>Item</th><th>Customisations</th><th class="text-center">Qty</th><th class="text-end">Price</th></tr></thead>
@@ -133,7 +133,7 @@ $csrf = generateCsrfToken();
 
         <!-- Fee Breakdown -->
         <div class="card shadow-sm border-0 mb-4">
-            <div class="card-header bg-white fw-bold">Fee Breakdown</div>
+            <div class="card-header fw-bold">Fee Breakdown</div>
             <div class="card-body">
                 <div class="d-flex justify-content-between mb-1"><span>Food Total</span><span><?= formatMoney((float)$order['food_total']) ?></span></div>
                 <div class="d-flex justify-content-between mb-1"><span>Delivery Fee</span><span><?= formatMoney((float)$order['delivery_fee']) ?></span></div>
@@ -151,7 +151,7 @@ $csrf = generateCsrfToken();
         <!-- Status Actions -->
         <?php if ($isCourier || $isAdmin): ?>
         <div class="card shadow-sm border-0 mb-4">
-            <div class="card-header bg-white fw-bold">Actions</div>
+            <div class="card-header fw-bold">Actions</div>
             <div class="card-body">
                 <?php if ($order['status'] === 'accepted' && $order['order_type'] === 'dining_hall'): ?>
                     <form class="event-form mb-2">
@@ -194,7 +194,7 @@ $csrf = generateCsrfToken();
 
         <!-- Timeline -->
         <div class="card shadow-sm border-0">
-            <div class="card-header bg-white fw-bold">Order Timeline</div>
+            <div class="card-header fw-bold">Order Timeline</div>
             <div class="card-body p-0">
                 <?php if (!empty($events)): ?>
                     <ul class="list-group list-group-flush">
