@@ -76,7 +76,7 @@ unset($order);
         $isPending   = $order['payment_status'] === 'pending';
         ?>
         <div class="col-12">
-        <div class="card shadow-sm border-0 <?= $isPending ? 'border-start border-warning border-3' : '' ?>">
+        <div class="card <?= $isPending ? 'dd-card-pending' : '' ?>"><?php // pending gets a 4px amber left accent via ::before pseudo-element ?>
             <!-- Card header row -->
             <div class="card-header d-flex flex-wrap justify-content-between align-items-center gap-2 py-3">
                 <div>
@@ -209,7 +209,7 @@ unset($order);
                         <?php endif; ?>
 
                         <?php if ($order['customer_notes']): ?>
-                            <div class="mt-2 p-2 bg-light rounded small text-muted">
+                            <div class="mt-2 p-2 bg-light rounded-1 small text-muted">
                                 <i class="ti ti-note me-1"></i><?= htmlspecialchars($order['customer_notes'], ENT_QUOTES | ENT_HTML5) ?>
                             </div>
                         <?php endif; ?>

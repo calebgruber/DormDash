@@ -46,11 +46,16 @@ if ($currentUser && $currentUser['role'] === 'admin') {
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/core@1.0.0-beta20/dist/css/tabler.min.css">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.29.0/dist/tabler-icons.min.css">
     <style>
-        /* ── Purple brand accent ─────────────────────────────────────── */
+        /* ── Purple brand accent + page canvas ──────────────────────── */
         :root {
             --dd-purple: #6B46C1;
             --dd-purple-dark: #553497;
             --dd-purple-light: rgba(107, 70, 193, .12);
+            /* Off-white page bg makes white cards pop */
+            --tblr-body-bg: #f4f4f8;
+        }
+        :root[data-bs-theme="dark"] {
+            --tblr-body-bg: #111122;
         }
         .btn-primary,
         .bg-primary { background-color: var(--dd-purple) !important; border-color: var(--dd-purple) !important; }
@@ -199,6 +204,130 @@ if ($currentUser && $currentUser['role'] === 'admin') {
         .chat-typing-dot:nth-child(2) { animation-delay: .2s; }
         .chat-typing-dot:nth-child(3) { animation-delay: .4s; }
         @keyframes typingPulse { 0%,80%,100%{ opacity:.25; transform:scale(.85); } 40%{ opacity:1; transform:scale(1); } }
+
+        /* ── Card escape hatches — let shadow-none / rounded-0 still work ── */
+        .card.shadow-none { box-shadow: none !important; }
+        .card.rounded-0   { border-radius: 0 !important; }
+        .card.rounded     { border-radius: 4px !important; }
+
+        /* ── Pending-order accent strip (replaces broken border-start) ── */
+        .dd-card-pending { position: relative; }
+        .dd-card-pending::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0;
+            width: 4px; height: 100%;
+            background-color: #f59e0b;
+            border-radius: 5px 0 0 5px; /* matches .card border-radius */
+            z-index: 1;
+        }
+
+        /* ── Buttons — 6 px radius, 500 weight, clean hover ────────────── */
+        .btn {
+            border-radius: 6px !important;
+            font-weight: 500;
+            letter-spacing: 0.01em;
+            transition: box-shadow .18s ease, background-color .18s ease,
+                        border-color .18s ease, transform .12s ease;
+        }
+        .btn:not(:disabled):not(.disabled):hover  { transform: translateY(-1px); }
+        .btn:not(:disabled):not(.disabled):active { transform: translateY(0);    }
+
+        /* btn-outline-secondary: subtler border, no harsh gray box */
+        .btn-outline-secondary {
+            border-color: rgba(0, 0, 0, 0.18) !important;
+            color: var(--tblr-body-color, #333) !important;
+        }
+        .btn-outline-secondary:hover {
+            background-color: rgba(0, 0, 0, 0.04) !important;
+            border-color: rgba(0, 0, 0, 0.28) !important;
+            color: var(--tblr-body-color, #333) !important;
+        }
+        [data-bs-theme="dark"] .btn-outline-secondary {
+            border-color: rgba(255, 255, 255, 0.18) !important;
+        }
+        [data-bs-theme="dark"] .btn-outline-secondary:hover {
+            background-color: rgba(255, 255, 255, 0.07) !important;
+            border-color: rgba(255, 255, 255, 0.30) !important;
+        }
+
+        /* btn-outline-primary mirrors brand purple */
+        .btn-outline-primary {
+            border-color: var(--dd-purple) !important;
+            color: var(--dd-purple) !important;
+        }
+        .btn-outline-primary:hover {
+            background-color: var(--dd-purple) !important;
+            color: #fff !important;
+        }
+
+        /* btn-outline-danger */
+        .btn-outline-danger:hover { color: #fff !important; }
+
+        /* Input-group buttons keep flush joins */
+        .input-group > .btn { border-radius: 0 !important; }
+        .input-group > .btn:first-child { border-radius: 6px 0 0 6px !important; }
+        .input-group > .btn:last-child  { border-radius: 0 6px 6px 0 !important; }
+        .input-group > .btn:only-child  { border-radius: 6px !important; }
+
+        /* ── Form controls — matching 6 px radius + purple focus ────────── */
+        .form-control, .form-select, .input-group-text {
+            border-radius: 6px !important;
+            border-color: rgba(0, 0, 0, 0.14);
+            transition: border-color .18s ease, box-shadow .18s ease;
+        }
+        .form-control:focus, .form-select:focus {
+            border-color: var(--dd-purple) !important;
+            box-shadow: 0 0 0 3px var(--dd-purple-light) !important;
+        }
+        .input-group .form-control:not(:first-child),
+        .input-group .form-select:not(:first-child)    { border-radius: 0 6px 6px 0 !important; }
+        .input-group .form-control:not(:last-child),
+        .input-group .form-select:not(:last-child)     { border-radius: 6px 0 0 6px !important; }
+        .input-group .input-group-text:first-child     { border-radius: 6px 0 0 6px !important; }
+        .input-group .input-group-text:last-child      { border-radius: 0 6px 6px 0 !important; }
+        [data-bs-theme="dark"] .form-control,
+        [data-bs-theme="dark"] .form-select,
+        [data-bs-theme="dark"] .input-group-text {
+            border-color: rgba(255, 255, 255, 0.12);
+        }
+
+        /* ── Alerts — matching radius, no harsh border ───────────────────── */
+        .alert {
+            border-radius: 6px !important;
+            border: none;
+        }
+        .alert.alert-warning  { border-left: 3px solid #f59e0b !important; }
+        .alert.alert-danger   { border-left: 3px solid #d63939 !important; }
+        .alert.alert-success  { border-left: 3px solid #2fb344 !important; }
+        .alert.alert-info     { border-left: 3px solid #1a7ead !important; }
+        .alert.alert-primary  { border-left: 3px solid var(--dd-purple) !important; }
+        .alert.alert-secondary { border-left: 3px solid #68737d !important; }
+
+        /* ── Modals — 8 px radius, no harsh border ───────────────────────── */
+        .modal-content {
+            border-radius: 8px !important;
+            border: none !important;
+            box-shadow:
+                rgba(0, 0, 0, 0.12) 0px 4px 6px -1px,
+                rgba(0, 0, 0, 0.08) 0px 16px 40px -4px !important;
+        }
+        .modal-header { border-bottom: 1px solid rgba(0, 0, 0, 0.06); }
+        .modal-footer { border-top:    1px solid rgba(0, 0, 0, 0.06); }
+        [data-bs-theme="dark"] .modal-header { border-bottom-color: rgba(255, 255, 255, 0.07); }
+        [data-bs-theme="dark"] .modal-footer { border-top-color:    rgba(255, 255, 255, 0.07); }
+
+        /* ── Dropdown menus — matching radius, clean shadow ─────────────── */
+        .dropdown-menu {
+            border-radius: 8px !important;
+            border: none !important;
+            box-shadow:
+                rgba(0, 0, 0, 0.10) 0px 2px 4px,
+                rgba(0, 0, 0, 0.08) 0px 8px 24px !important;
+        }
+        .dropdown-item { border-radius: 4px; margin: 1px 4px; padding-left: 10px; padding-right: 10px; }
+        .dropdown-item:first-child { margin-top: 4px; }
+        .dropdown-item:last-child  { margin-bottom: 4px; }
     </style>
 </head>
 <body class="antialiased">
