@@ -1,0 +1,21 @@
+RewriteEngine On
+
+# ── Remove .php extension from browser URLs ──────────────────────────────
+# Skip POST requests to preserve API/webhook functionality
+RewriteCond %{REQUEST_METHOD} !POST
+RewriteCond %{THE_REQUEST} \s/+(.*?)\.php[\s?] [NC]
+RewriteRule ^ /%1 [R=301,L,QSA]
+
+# Internally serve *.php for extensionless URL requests
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME}.php -f
+RewriteRule ^(.+?)/?$ /$1.php [L,QSA]
+
+# ── Security ──────────────────────────────────────────────────────────────
+# Deny access to hidden files (.env, .htaccess, .git, etc.)
+<FilesMatch "^\.">
+  Require all denied
+</FilesMatch>
+
+Options -Indexes
